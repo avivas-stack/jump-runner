@@ -43,11 +43,11 @@ export function HowItWorksModal() {
       </button>
       <dialog
         ref={dialogRef}
-        className="w-full max-w-lg rounded-2xl border border-stone-200 p-0 backdrop:bg-stone-900/40"
+        className="w-full max-w-lg rounded-lg border border-stone-200 p-0 backdrop:bg-stone-900/40"
       >
         <div className="max-h-[80vh] overflow-y-auto p-6" dir="rtl">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="text-lg font-bold text-stone-900">איך אמינות עובדת</h2>
+            <h2 className="font-serif text-lg font-bold text-stone-900">איך אמינות עובדת</h2>
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}

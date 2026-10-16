@@ -1,20 +1,27 @@
 import type { Classification, Confidence } from "@/lib/types";
 
+/**
+ * A stamp, not a pill: a sharp-cornered mark with a solid left bar and small-caps
+ * tracking, closer to how a press outlet marks a verdict than a colorful SaaS tag —
+ * part of moving the whole report away from a soft, generic "AI app" look.
+ */
 const STYLES: Record<Classification, string> = {
-  מאומת: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  שקרי: "bg-rose-50 text-rose-800 border-rose-200",
-  מטעה: "bg-amber-50 text-amber-800 border-amber-200",
-  "חסר הקשר": "bg-orange-50 text-orange-800 border-orange-200",
-  "לא ניתן לאימות": "bg-stone-100 text-stone-700 border-stone-300",
-  'ככה"נ שקרי': "bg-orange-50 text-orange-900 border-orange-400 border-dashed",
-  "שנוי במחלוקת": "bg-violet-50 text-violet-800 border-violet-200",
-  מיושן: "bg-sky-50 text-sky-800 border-sky-200",
-  "דעה, תחזית או סאטירה": "bg-stone-100 text-stone-600 border-stone-300 italic",
+  מאומת: "border-emerald-700 text-emerald-900 bg-emerald-50/60",
+  שקרי: "border-rose-700 text-rose-900 bg-rose-50/60",
+  מטעה: "border-amber-700 text-amber-900 bg-amber-50/60",
+  "חסר הקשר": "border-orange-700 text-orange-900 bg-orange-50/60",
+  "לא ניתן לאימות": "border-stone-500 text-stone-700 bg-stone-100/60",
+  'ככה"נ שקרי': "border-orange-700 text-orange-900 bg-orange-50/60 border-dashed",
+  "שנוי במחלוקת": "border-violet-700 text-violet-900 bg-violet-50/60",
+  מיושן: "border-sky-700 text-sky-900 bg-sky-50/60",
+  "דעה, תחזית או סאטירה": "border-stone-500 text-stone-700 bg-stone-100/60 italic",
 };
 
 export function ClassificationBadge({ classification }: { classification: Classification }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${STYLES[classification]}`}>
+    <span
+      className={`inline-flex items-center border-s-4 px-3 py-1 text-xs font-bold tracking-wide ${STYLES[classification]}`}
+    >
       {classification}
     </span>
   );

@@ -18,7 +18,7 @@ export function ClaimCard({
   const contradicting = evidence.filter((e) => evaluation.contradictingEvidenceIds.includes(e.id));
 
   return (
-    <article id={`claim-${claim.id}`} className="scroll-mt-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <article id={`claim-${claim.id}`} className="scroll-mt-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ClassificationBadge classification={evaluation.classification} />
         <span className="text-xs text-stone-400">{claimTypeLabel(claim.claimType)}</span>

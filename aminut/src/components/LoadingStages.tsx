@@ -14,7 +14,7 @@ export function LoadingStages({ stage, hasUrl }: { stage: StageEvent | null; has
   const currentIndex = stages.findIndex((s) => s.key === currentKey);
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm" role="status" aria-live="polite">
+    <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm" role="status" aria-live="polite">
       <ul className="space-y-3">
         {stages.map((s, i) => {
           const isDone = currentIndex > i || (currentIndex === -1 && i < 0);

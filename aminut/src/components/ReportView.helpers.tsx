@@ -16,8 +16,8 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
   const sharedSourceCount = Array.from(urlToClaimIds.values()).filter((s) => s.size > 1).length;
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-stone-900">השוואת טענות</h2>
+    <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+      <h2 className="font-serif text-lg font-bold text-stone-900">השוואת טענות</h2>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[560px] text-start text-sm">
           <thead>
@@ -82,8 +82,8 @@ export function FactCheckerSitesSection({ report }: { report: Report }) {
   if (byClaim.size === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-stone-900">מה אתרי בדיקת עובדות אחרים אמרו</h2>
+    <section className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm">
+      <h2 className="font-serif text-lg font-bold text-stone-900">מה אתרי בדיקת עובדות אחרים אמרו</h2>
       <p className="mt-1 text-xs text-stone-500">
         הממצאים הבאים מגיעים מאתרי בדיקת עובדות חיצוניים ועצמאיים (כמו <span dir="ltr">fakereporter.net</span> או{" "}
         <span dir="ltr">irrelevant.org.il</span>) שעלו בחיפוש עבור הטענות שנבדקו כאן. אלה מקורות נוספים לשיקול דעת —
@@ -94,7 +94,7 @@ export function FactCheckerSitesSection({ report }: { report: Report }) {
           const items = byClaim.get(claim.id);
           if (!items || items.length === 0) return null;
           return (
-            <div key={claim.id} className="rounded-xl border border-indigo-100 bg-white p-4">
+            <div key={claim.id} className="rounded-md border border-indigo-100 bg-white p-4">
               <p className="text-sm font-medium text-stone-800">{truncate(claim.originalText, 100)}</p>
               <ul className="mt-2 space-y-2">
                 {items.map((e) => (

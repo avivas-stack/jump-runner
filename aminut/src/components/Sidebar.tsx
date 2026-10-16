@@ -41,7 +41,7 @@ export function Sidebar({
 
   return (
     <aside className="space-y-6 lg:w-80 lg:shrink-0">
-      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
           <span aria-hidden>🔥</span> פייק ויראלי
         </h2>
@@ -51,7 +51,7 @@ export function Sidebar({
         ) : (
           <ul className="mt-3 space-y-3">
             {viral.map((item, i) => (
-              <li key={i} className="rounded-xl bg-stone-50 p-3">
+              <li key={i} className="rounded-md bg-stone-50 p-3">
                 <p className="text-sm text-stone-700">{item.claim}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <a
@@ -77,7 +77,7 @@ export function Sidebar({
         )}
       </section>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-stone-900">דוגמאות לבדיקה</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {STATIC_EXAMPLE_CLAIMS.map((claim) => (

@@ -14,7 +14,7 @@ export function HistoryPanel({
   if (history.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-stone-700">בדיקות אחרונות</h3>
         <button onClick={onClear} type="button" className="text-xs text-stone-400 hover:text-stone-600">

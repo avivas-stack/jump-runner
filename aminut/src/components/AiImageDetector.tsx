@@ -15,9 +15,9 @@ const OPINION_LABEL: Record<"yes" | "no" | "unsure", string> = {
 type VerdictTone = "block" | "caution" | "share";
 
 const VERDICT_BADGE_STYLES: Record<VerdictTone, string> = {
-  block: "bg-rose-50 text-rose-800 border-rose-300",
-  caution: "bg-amber-50 text-amber-800 border-amber-300",
-  share: "bg-emerald-50 text-emerald-800 border-emerald-300",
+  block: "border-rose-700 text-rose-900 bg-rose-50/60",
+  caution: "border-amber-700 text-amber-900 bg-amber-50/60",
+  share: "border-emerald-700 text-emerald-900 bg-emerald-50/60",
 };
 
 /**
@@ -96,9 +96,9 @@ export function AiImageDetector() {
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
       <div>
-        <h2 className="text-lg font-semibold text-stone-900">זיהוי תוכן שנוצר על ידי AI בתמונה</h2>
+        <h2 className="font-serif text-lg font-bold text-stone-900">זיהוי תוכן שנוצר על ידי AI בתמונה</h2>
         <p className="mt-1 text-sm text-stone-600">
           הכלי בודק שני דברים נפרדים: סימני מקור ידועים (כמו C2PA Content Credentials או{" "}
           <span dir="ltr">SynthID</span>) שנמצאים במטא-דאטה של הקובץ עצמו, וחוות דעת חזותית זהירה
@@ -119,7 +119,7 @@ export function AiImageDetector() {
           type="button"
           disabled={status === "loading"}
           onClick={() => fileInputRef.current?.click()}
-          className="flex w-full items-center justify-center rounded-xl border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-md border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "loading"
             ? "בודק את התמונה..."
@@ -130,14 +130,14 @@ export function AiImageDetector() {
 
       {previewUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={previewUrl} alt="תצוגה מקדימה" className="max-h-64 w-full rounded-xl object-contain" />
+        <img src={previewUrl} alt="תצוגה מקדימה" className="max-h-64 w-full rounded-md object-contain" />
       )}
 
       {result && (
-        <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
+        <div className="space-y-3 rounded-md border border-stone-200 bg-stone-50 p-4">
           <div className="text-center">
             <span
-              className={`inline-block rounded-xl border-2 px-4 py-2 text-sm font-bold ${VERDICT_BADGE_STYLES[computeVerdict(result).tone]}`}
+              className={`inline-block border-s-4 px-4 py-2 text-sm font-bold tracking-wide ${VERDICT_BADGE_STYLES[computeVerdict(result).tone]}`}
             >
               {computeVerdict(result).label}
             </span>
@@ -183,7 +183,7 @@ export function AiImageDetector() {
           <button
             type="button"
             onClick={reset}
-            className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+            className="w-full rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
           >
             בדיקת תמונה נוספת
           </button>

@@ -14,7 +14,7 @@ export function VerdictHero({ report }: { report: Report }) {
     const evaluation = report.evaluations.find((e) => e.claimId === report.claims[0].id);
     if (!evaluation) return null;
     return (
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
+      <section className="rounded-lg border border-stone-200 bg-white p-6 text-center shadow-sm">
         <span className={BIG_BADGE_STYLES[evaluation.classification]}>{evaluation.classification}</span>
         <p className="mt-2 text-sm text-stone-500">{CONFIDENCE_FULL_LABEL[evaluation.confidence]}</p>
         <div className="mt-1">
@@ -30,8 +30,8 @@ export function VerdictHero({ report }: { report: Report }) {
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 className="text-center text-xs font-medium text-stone-500">סיכום הסיווגים</h2>
+    <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+      <h2 className="text-center text-xs font-medium tracking-wide text-stone-500 uppercase">סיכום הסיווגים</h2>
       <div className="mt-3 flex flex-wrap items-start justify-center gap-4">
         {Array.from(counts.entries()).map(([classification, count]) => (
           <div key={classification} className="flex flex-col items-center gap-1">
@@ -47,18 +47,18 @@ export function VerdictHero({ report }: { report: Report }) {
   );
 }
 
+const BIG_BADGE_BASE =
+  "inline-block border-s-[6px] px-6 py-3 font-serif text-2xl font-bold";
 const BIG_BADGE_STYLES: Record<Classification, string> = {
-  מאומת: "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-emerald-50 text-emerald-800 border-emerald-300",
-  שקרי: "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-rose-50 text-rose-800 border-rose-300",
-  מטעה: "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-amber-50 text-amber-800 border-amber-300",
-  "חסר הקשר": "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-orange-50 text-orange-800 border-orange-300",
-  "לא ניתן לאימות": "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-stone-100 text-stone-700 border-stone-300",
-  'ככה"נ שקרי':
-    "inline-block rounded-2xl border-2 border-dashed px-6 py-3 text-2xl font-bold bg-orange-50 text-orange-900 border-orange-400",
-  "שנוי במחלוקת": "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-violet-50 text-violet-800 border-violet-300",
-  מיושן: "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold bg-sky-50 text-sky-800 border-sky-300",
-  "דעה, תחזית או סאטירה":
-    "inline-block rounded-2xl border-2 px-6 py-3 text-2xl font-bold italic bg-stone-100 text-stone-600 border-stone-300",
+  מאומת: `${BIG_BADGE_BASE} border-emerald-700 text-emerald-900 bg-emerald-50/60`,
+  שקרי: `${BIG_BADGE_BASE} border-rose-700 text-rose-900 bg-rose-50/60`,
+  מטעה: `${BIG_BADGE_BASE} border-amber-700 text-amber-900 bg-amber-50/60`,
+  "חסר הקשר": `${BIG_BADGE_BASE} border-orange-700 text-orange-900 bg-orange-50/60`,
+  "לא ניתן לאימות": `${BIG_BADGE_BASE} border-stone-500 text-stone-700 bg-stone-100/60`,
+  'ככה"נ שקרי': `${BIG_BADGE_BASE} border-dashed border-orange-700 text-orange-900 bg-orange-50/60`,
+  "שנוי במחלוקת": `${BIG_BADGE_BASE} border-violet-700 text-violet-900 bg-violet-50/60`,
+  מיושן: `${BIG_BADGE_BASE} border-sky-700 text-sky-900 bg-sky-50/60`,
+  "דעה, תחזית או סאטירה": `${BIG_BADGE_BASE} italic border-stone-500 text-stone-700 bg-stone-100/60`,
 };
 
 const CONFIDENCE_FULL_LABEL: Record<Confidence, string> = {

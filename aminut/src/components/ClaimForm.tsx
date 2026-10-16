@@ -80,7 +80,7 @@ export function ClaimForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
       <div>
         <label htmlFor="claim-text" className="mb-1 block text-sm font-medium text-stone-700">
           טקסט, כותרת, ציטוט או פוסט לבדיקה
@@ -93,7 +93,7 @@ export function ClaimForm({
           rows={5}
           disabled={disabled}
           placeholder="הדבק כאן כותרת, ציטוט, פוסט או טענה שברצונך לבדוק..."
-          className="w-full resize-none rounded-xl border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
+          className="w-full resize-none rounded-md border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
         />
         {imageNote && (
           <p
@@ -120,7 +120,7 @@ export function ClaimForm({
           maxLength={2000}
           disabled={disabled}
           placeholder="https://..."
-          className="w-full rounded-xl border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
+          className="w-full rounded-md border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
         />
       </div>
 
@@ -138,7 +138,7 @@ export function ClaimForm({
           type="button"
           disabled={disabled || imageStatus === "loading"}
           onClick={() => fileInputRef.current?.click()}
-          className="flex w-full items-center justify-center rounded-xl border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-md border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {imageStatus === "loading"
             ? "מזהה טקסט בתמונה..."
@@ -150,7 +150,7 @@ export function ClaimForm({
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300"
+        className="w-full rounded-md bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300"
       >
         בדוק אמינות
       </button>
