@@ -59,12 +59,7 @@ const SYSTEM_PROMPT = `אתה נותן חוות דעת סגנונית זהירה
 - קבע "yes" כשיש סימן קונקרטי אחד או יותר מכל אחת מהקטגוריות — בין אם זה פגם חזותי ובין אם זה חוסר סבירות הגיונית/עובדתית בוטה של המצב המתואר. אל תטען ודאות; אם הסימנים חלשים או מעורבים, החזר "unsure" ולא "yes" חד-משמעי.
 - rationale קצר (1-3 משפטים), בעברית, ניטרלי, ללא שפה סנסציונית, ומתייחס לסימנים הקונקרטיים שצוינו (אם יש).`;
 
-/**
- * Non-authoritative, best-effort visual impression from a vision-capable model —
- * deliberately separate from the metadata scan above and framed as an opinion, not
- * a verdict, so the two never get conflated into a false sense of certainty.
- */
-export async function getVisualAiOpinion(
+async function sampleVisualAiOpinion(
   base64Data: string,
   mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
 ): Promise<VisualAiOpinion> {
@@ -86,4 +81,53 @@ export async function getVisualAiOpinion(
       },
     ],
   });
+}
+
+const CONSENSUS_SAMPLE_COUNT = 3;
+
+/**
+ * Picks the majority verdict across independent samples of the same call. The
+ * Anthropic API doesn't expose a temperature/determinism knob on current models
+ * (passing one is rejected outright), so a single sample of a genuinely borderline
+ * image can land on "yes" one time and "unsure" the next — unacceptable for a
+ * credibility tool, where the same image should get the same answer. Requiring
+ * at least 2 of 3 samples to agree smooths that out; a real three-way split (no
+ * sample has more votes than any other) honestly reflects "the model itself is
+ * unsure" rather than picking one arbitrary sample's answer.
+ */
+function pickConsensusOpinion(samples: VisualAiOpinion[]): VisualAiOpinion {
+  const counts: Record<VisualAiOpinion["likelyAiGenerated"], number> = { yes: 0, no: 0, unsure: 0 };
+  for (const sample of samples) counts[sample.likelyAiGenerated] += 1;
+
+  const [[topVerdict, topCount], [, runnerUpCount]] = (
+    Object.entries(counts) as [VisualAiOpinion["likelyAiGenerated"], number][]
+  ).sort((a, b) => b[1] - a[1]);
+
+  if (topCount === runnerUpCount) {
+    return {
+      likelyAiGenerated: "unsure",
+      rationale: "חוות הדעת החזותית לא הייתה עקבית בין כמה בדיקות חוזרות של אותה תמונה, ולכן אי אפשר לקבוע מסקנה ברורה.",
+      visualSigns: [],
+    };
+  }
+  // Among samples agreeing on the majority verdict, prefer the one with the most
+  // concrete visualSigns — the most informative explanation to show the user.
+  return samples
+    .filter((s) => s.likelyAiGenerated === topVerdict)
+    .sort((a, b) => b.visualSigns.length - a.visualSigns.length)[0];
+}
+
+/**
+ * Non-authoritative, best-effort visual impression from a vision-capable model —
+ * deliberately separate from the metadata scan above and framed as an opinion, not
+ * a verdict, so the two never get conflated into a false sense of certainty.
+ */
+export async function getVisualAiOpinion(
+  base64Data: string,
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+): Promise<VisualAiOpinion> {
+  const samples = await Promise.all(
+    Array.from({ length: CONSENSUS_SAMPLE_COUNT }, () => sampleVisualAiOpinion(base64Data, mediaType))
+  );
+  return pickConsensusOpinion(samples);
 }
