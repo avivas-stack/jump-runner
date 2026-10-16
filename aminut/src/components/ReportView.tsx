@@ -7,6 +7,7 @@ import {
   ClaimComparisonTable,
   CopyShareLinkButton,
   CopySummaryButton,
+  FactCheckerSitesSection,
   SourceList,
   formatDate,
 } from "./ReportView.helpers";
@@ -89,6 +90,8 @@ export function ReportView({
           })
         )}
       </section>
+
+      <FactCheckerSitesSection report={report} />
 
       {report.evidence.length > 0 && (
         <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">

@@ -207,4 +207,55 @@ describe("ReportView", () => {
     render(<ReportView report={report} />);
     expect(screen.queryByRole("button", { name: /בדיקה חדשה/ })).not.toBeInTheDocument();
   });
+
+  it("shows a share/don't-share recommendation next to every classification, defaulting false claims to don't-share", () => {
+    render(<ReportView report={report} />);
+    // מאומת -> share; שקרי -> block. Each appears at least in the hero/summary and the claim card.
+    expect(screen.getAllByText("המלצה: אפשר להעביר").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("המלצה: לא להעביר!").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("never recommends sharing an unverifiable claim, even though it isn't classified as false", () => {
+    const singleClaimReport = {
+      ...report,
+      claims: [report.claims[0]],
+      evaluations: [{ ...report.evaluations[0], classification: "לא ניתן לאימות" as const }],
+    };
+    render(<ReportView report={singleClaimReport} />);
+    expect(screen.getAllByText("המלצה: לא להעביר!").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("המלצה: אפשר להעביר")).not.toBeInTheDocument();
+  });
+
+  it("shows a dedicated section for evidence from known fact-checking sites, grouped by claim", () => {
+    const reportWithFactChecker: Report = {
+      ...report,
+      evidence: [
+        ...report.evidence,
+        {
+          id: "e2",
+          claimId: "c2",
+          url: "https://fakereporter.net/some-check",
+          title: "בדיקה של FakeReporter",
+          publisher: "fakereporter.net",
+          publicationDate: "2026-01-02",
+          retrievedAt: new Date().toISOString(),
+          sourceType: "fact-checker",
+          excerpt: "ממצא עצמאי מהאתר",
+          accessible: true,
+          inaccessibleReason: null,
+        },
+      ],
+    };
+    render(<ReportView report={reportWithFactChecker} />);
+    expect(screen.getByText("מה אתרי בדיקת עובדות אחרים אמרו")).toBeInTheDocument();
+    // Appears both in the dedicated section and in the full "all sources" list below it.
+    const links = screen.getAllByRole("link", { name: "בדיקה של FakeReporter" });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(links[0]).toHaveAttribute("href", "https://fakereporter.net/some-check");
+  });
+
+  it("omits the fact-checking-sites section when no fact-checker evidence was found", () => {
+    render(<ReportView report={report} />);
+    expect(screen.queryByText("מה אתרי בדיקת עובדות אחרים אמרו")).not.toBeInTheDocument();
+  });
 });

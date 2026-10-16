@@ -1,7 +1,7 @@
 "use client";
 
 import type { Classification, Confidence, Report } from "@/lib/types";
-import { ClassificationBadge } from "./ClassificationBadge";
+import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
 
 /**
  * A large, hard-to-miss verdict summary at the very top of the report. Deliberately
@@ -17,6 +17,9 @@ export function VerdictHero({ report }: { report: Report }) {
       <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
         <span className={BIG_BADGE_STYLES[evaluation.classification]}>{evaluation.classification}</span>
         <p className="mt-2 text-sm text-stone-500">{CONFIDENCE_FULL_LABEL[evaluation.confidence]}</p>
+        <div className="mt-1">
+          <RecommendationNote classification={evaluation.classification} />
+        </div>
       </section>
     );
   }
@@ -29,12 +32,15 @@ export function VerdictHero({ report }: { report: Report }) {
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
       <h2 className="text-center text-xs font-medium text-stone-500">סיכום הסיווגים</h2>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-3 flex flex-wrap items-start justify-center gap-4">
         {Array.from(counts.entries()).map(([classification, count]) => (
-          <span key={classification} className="flex items-center gap-1.5">
-            <ClassificationBadge classification={classification} />
-            <span className="text-sm font-medium text-stone-500">× {count}</span>
-          </span>
+          <div key={classification} className="flex flex-col items-center gap-1">
+            <span className="flex items-center gap-1.5">
+              <ClassificationBadge classification={classification} />
+              <span className="text-sm font-medium text-stone-500">× {count}</span>
+            </span>
+            <RecommendationNote classification={classification} />
+          </div>
         ))}
       </div>
     </section>

@@ -38,6 +38,7 @@ describe("getVisualAiOpinion", () => {
     callStructuredMock.mockResolvedValueOnce({
       likelyAiGenerated: "unsure",
       rationale: "אין סימן ברור, אי אפשר לקבוע.",
+      visualSigns: [],
     });
 
     const result = await getVisualAiOpinion("base64data", "image/png");
@@ -49,5 +50,19 @@ describe("getVisualAiOpinion", () => {
       source: { type: "base64", media_type: "image/png", data: "base64data" },
     });
     expect(result.likelyAiGenerated).toBe("unsure");
+  });
+
+  it("instructs the model to reason about concrete visual tells, not just a gut impression", async () => {
+    callStructuredMock.mockResolvedValueOnce({
+      likelyAiGenerated: "yes",
+      rationale: "נראו ידיים מעוותות ותאורה לא עקבית.",
+      visualSigns: ["ידיים עם מספר אצבעות שגוי", "תאורה לא עקבית בין חלקי התמונה"],
+    });
+
+    const result = await getVisualAiOpinion("base64data", "image/jpeg");
+
+    const call = callStructuredMock.mock.calls[0][0];
+    expect(call.system).toMatch(/ידיים|אצבעות/);
+    expect(result.visualSigns).toHaveLength(2);
   });
 });

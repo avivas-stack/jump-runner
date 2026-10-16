@@ -66,4 +66,56 @@ describe("retrievePageText", () => {
     expect(result.accessible).toBe(false);
     expect(result.reason).toMatch(/פנימ/);
   });
+
+  it("falls back to the og:description meta tag when the body is entirely JS-rendered (e.g. a Facebook post-share link)", async () => {
+    safeFetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      finalUrl: "https://www.facebook.com/story.php?story_fbid=123",
+      contentType: "text/html; charset=utf-8",
+      truncated: false,
+      body:
+        '<html><head><title>FastNews - טענה שמתפרסמת</title>' +
+        '<meta property="og:description" content="זו הטענה האמיתית שפורסמה בפוסט."/>' +
+        '</head><body><script>window.__data = { huge: "json blob", more: "text that lives only in JS" };</script></body></html>',
+    });
+
+    const result = await retrievePageText("https://www.facebook.com/story.php?story_fbid=123");
+    expect(result.accessible).toBe(true);
+    expect(result.text).toBe("זו הטענה האמיתית שפורסמה בפוסט.");
+  });
+
+  it("never overrides real visible body text with the meta description, even when both exist", async () => {
+    safeFetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      finalUrl: "https://example.com/article",
+      contentType: "text/html",
+      truncated: false,
+      body:
+        '<html><head><meta property="og:description" content="תקציר קצר לשיתוף בלבד."/></head>' +
+        "<body><article><p>זהו תוכן הכתבה המלא והאמיתי, ארוך בהרבה מהתקציר שבמטא-דאטה.</p></article></body></html>",
+    });
+
+    const result = await retrievePageText("https://example.com/article");
+    expect(result.text).toContain("תוכן הכתבה המלא והאמיתי");
+    expect(result.text).not.toContain("תקציר קצר לשיתוף בלבד");
+  });
+
+  it("identifies as a known link-preview crawler to social hosts that gate real content behind a login wall, but keeps the honest UA everywhere else", async () => {
+    safeFetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      finalUrl: "https://example.com",
+      contentType: "text/html",
+      truncated: false,
+      body: "<html><body><article><p>תוכן</p></article></body></html>",
+    });
+
+    await retrievePageText("https://www.facebook.com/story.php?story_fbid=123");
+    expect(safeFetchMock.mock.calls[0][1].userAgent).toMatch(/facebookexternalhit/);
+
+    await retrievePageText("https://example.com/article");
+    expect(safeFetchMock.mock.calls[1][1].userAgent).toBeUndefined();
+  });
 });

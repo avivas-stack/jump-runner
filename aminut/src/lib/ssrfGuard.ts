@@ -110,7 +110,7 @@ export interface SafeFetchResult {
  */
 export async function safeFetch(
   rawUrl: string,
-  opts: { maxBytes: number; timeoutMs: number }
+  opts: { maxBytes: number; timeoutMs: number; userAgent?: string }
 ): Promise<SafeFetchResult> {
   let currentUrl = rawUrl;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
@@ -137,7 +137,7 @@ export async function safeFetch(
 function requestOnce(
   parsed: URL,
   connectIp: string,
-  opts: { maxBytes: number; timeoutMs: number }
+  opts: { maxBytes: number; timeoutMs: number; userAgent?: string }
 ): Promise<{ status: number; location?: string; body: string; contentType: string | null; truncated: boolean }> {
   return new Promise((resolve, reject) => {
     const transport = parsed.protocol === "https:" ? https : http;
@@ -150,7 +150,7 @@ function requestOnce(
         method: "GET",
         headers: {
           Host: parsed.hostname,
-          "User-Agent": "aminut-fact-checker/0.1 (+claim verification bot)",
+          "User-Agent": opts.userAgent ?? "aminut-fact-checker/0.1 (+claim verification bot)",
           Accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
         },
         timeout: opts.timeoutMs,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { EvidenceItem, ExtractedClaim, Report } from "@/lib/types";
-import { ClassificationBadge, ConfidenceNote } from "./ClassificationBadge";
+import { ClassificationBadge, ConfidenceNote, RecommendationNote } from "./ClassificationBadge";
 import { claimTypeLabel, sourceTypeLabel } from "./ReportView.helpers";
 
 export function ClaimCard({
@@ -23,6 +23,7 @@ export function ClaimCard({
         <ClassificationBadge classification={evaluation.classification} />
         <span className="text-xs text-stone-400">{claimTypeLabel(claim.claimType)}</span>
       </div>
+      <RecommendationNote classification={evaluation.classification} />
       <p className="mt-3 font-medium text-stone-900">&ldquo;{claim.originalText}&rdquo;</p>
       <ConfidenceNote confidence={evaluation.confidence} />
       <p className="mt-3 text-sm leading-relaxed text-stone-700">{evaluation.rationale}</p>

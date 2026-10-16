@@ -154,6 +154,12 @@ export const VisualAiOpinionSchema = z.object({
     .enum(["yes", "no", "unsure"])
     .describe("A cautious stylistic impression only — never a forensic conclusion."),
   rationale: z.string().describe("1-3 sentences in Hebrew explaining the impression."),
+  visualSigns: z
+    .array(z.string())
+    .default([])
+    .describe(
+      "Specific visual AI-generation tells actually observed in this image (e.g. unnaturally smooth/symmetric faces, malformed hands, impossible physics, inconsistent lighting/shadows, garbled text), each a short Hebrew phrase. Empty if none were observed."
+    ),
 });
 export type VisualAiOpinion = z.infer<typeof VisualAiOpinionSchema>;
 

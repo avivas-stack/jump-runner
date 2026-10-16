@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { EvidenceItem, ExtractedClaim, Report } from "@/lib/types";
-import { ClassificationBadge } from "./ClassificationBadge";
+import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
 
 export function ClaimComparisonTable({ report }: { report: Report }) {
   // Sources cited for more than one claim — surfaces when two claims lean on the
@@ -19,13 +19,14 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
     <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">השוואת טענות</h2>
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[420px] text-start text-sm">
+        <table className="w-full min-w-[560px] text-start text-sm">
           <thead>
             <tr className="border-b border-stone-200 text-xs text-stone-500">
               <th className="py-2 pe-2 font-medium">#</th>
               <th className="py-2 pe-2 font-medium">טענה</th>
               <th className="py-2 pe-2 font-medium">סיווג</th>
-              <th className="py-2 font-medium">ביטחון</th>
+              <th className="py-2 pe-2 font-medium">ביטחון</th>
+              <th className="py-2 font-medium">המלצה</th>
             </tr>
           </thead>
           <tbody>
@@ -43,7 +44,10 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
                   <td className="py-2 pe-2 align-top">
                     <ClassificationBadge classification={evaluation.classification} />
                   </td>
-                  <td className="py-2 align-top text-xs text-stone-500">{confidenceShortLabel(evaluation.confidence)}</td>
+                  <td className="py-2 pe-2 align-top text-xs text-stone-500">{confidenceShortLabel(evaluation.confidence)}</td>
+                  <td className="py-2 align-top">
+                    <RecommendationNote classification={evaluation.classification} />
+                  </td>
                 </tr>
               );
             })}
@@ -57,6 +61,64 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
             : `${sharedSourceCount} מקורות שימשו לבדיקת יותר מטענה אחת — לא בהכרח ראיה עצמאית נוספת לכל טענה.`}
         </p>
       )}
+    </section>
+  );
+}
+
+/**
+ * Surfaces evidence the pipeline already retrieved from known independent
+ * fact-checking sites (see FACT_CHECKER_HOSTS in evidenceRegistry.ts) in its own
+ * highlighted section, grouped by claim — instead of scraping those sites
+ * separately. Renders nothing when no such evidence was found for this report.
+ */
+export function FactCheckerSitesSection({ report }: { report: Report }) {
+  const byClaim = new Map<string, EvidenceItem[]>();
+  for (const item of report.evidence) {
+    if (item.sourceType !== "fact-checker") continue;
+    const list = byClaim.get(item.claimId) ?? [];
+    list.push(item);
+    byClaim.set(item.claimId, list);
+  }
+  if (byClaim.size === 0) return null;
+
+  return (
+    <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-stone-900">מה אתרי בדיקת עובדות אחרים אמרו</h2>
+      <p className="mt-1 text-xs text-stone-500">
+        הממצאים הבאים מגיעים מאתרי בדיקת עובדות חיצוניים ועצמאיים (כמו <span dir="ltr">fakereporter.net</span> או{" "}
+        <span dir="ltr">irrelevant.org.il</span>) שעלו בחיפוש עבור הטענות שנבדקו כאן. אלה מקורות נוספים לשיקול דעת —
+        לא אימות של הבדיקה שלנו ולא תחליף לה.
+      </p>
+      <div className="mt-4 space-y-4">
+        {report.claims.map((claim) => {
+          const items = byClaim.get(claim.id);
+          if (!items || items.length === 0) return null;
+          return (
+            <div key={claim.id} className="rounded-xl border border-indigo-100 bg-white p-4">
+              <p className="text-sm font-medium text-stone-800">{truncate(claim.originalText, 100)}</p>
+              <ul className="mt-2 space-y-2">
+                {items.map((e) => (
+                  <li key={e.id} className="text-sm">
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="font-medium text-indigo-700 underline-offset-2 hover:underline"
+                    >
+                      {e.title || e.url}
+                    </a>
+                    <span className="ms-1 text-xs text-stone-400">
+                      {e.publisher ? `· ${e.publisher}` : ""}
+                      {e.publicationDate ? ` · ${e.publicationDate}` : ""}
+                    </span>
+                    {e.excerpt && <p className="mt-0.5 text-xs text-stone-600">{truncate(e.excerpt, 200)}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

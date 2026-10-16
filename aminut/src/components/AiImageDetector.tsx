@@ -12,6 +12,35 @@ const OPINION_LABEL: Record<"yes" | "no" | "unsure", string> = {
   unsure: "אי אפשר לקבוע מהמראה החזותי בלבד",
 };
 
+type VerdictTone = "block" | "caution" | "share";
+
+const VERDICT_BADGE_STYLES: Record<VerdictTone, string> = {
+  block: "bg-rose-50 text-rose-800 border-rose-300",
+  caution: "bg-amber-50 text-amber-800 border-amber-300",
+  share: "bg-emerald-50 text-emerald-800 border-emerald-300",
+};
+
+/**
+ * Combines the two independent signals (metadata markers, visual opinion) into one
+ * headline badge. A metadata hit is the strongest signal (real, checkable fact about
+ * the file) and wins outright; otherwise the cautious visual opinion decides — and an
+ * absence of signal ("unsure") is always shown as "can't determine", never as "clean",
+ * so the UI never implies a certainty the tool doesn't have.
+ */
+function computeVerdict(result: DetectAiImageResult): { label: string; tone: VerdictTone } {
+  if (result.credentialsMarkers.length > 0) {
+    return { label: "נמצאו סימני מקור של AI במטא-דאטה", tone: "block" };
+  }
+  const opinion = result.visualOpinion?.likelyAiGenerated;
+  if (opinion === "yes") {
+    return { label: "ככל הנראה נוצרה או עובדה על ידי AI", tone: "block" };
+  }
+  if (opinion === "no") {
+    return { label: "לא נמצאו עדויות ל-AI", tone: "share" };
+  }
+  return { label: "לא ניתן לקבוע באופן ברור", tone: "caution" };
+}
+
 export function AiImageDetector() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +135,14 @@ export function AiImageDetector() {
 
       {result && (
         <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
+          <div className="text-center">
+            <span
+              className={`inline-block rounded-xl border-2 px-4 py-2 text-sm font-bold ${VERDICT_BADGE_STYLES[computeVerdict(result).tone]}`}
+            >
+              {computeVerdict(result).label}
+            </span>
+          </div>
+
           <div>
             <h3 className="text-sm font-semibold text-stone-900">סימני מקור במטא-דאטה</h3>
             {result.credentialsMarkers.length > 0 ? (
@@ -127,6 +164,13 @@ export function AiImageDetector() {
               <h3 className="text-sm font-semibold text-stone-900">חוות דעת חזותית (לא ודאית)</h3>
               <p className="mt-1 text-sm text-stone-700">{OPINION_LABEL[result.visualOpinion.likelyAiGenerated]}</p>
               <p className="mt-1 text-xs text-stone-500">{result.visualOpinion.rationale}</p>
+              {result.visualOpinion.visualSigns.length > 0 && (
+                <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs text-stone-600">
+                  {result.visualOpinion.visualSigns.map((sign, i) => (
+                    <li key={i}>{sign}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 
