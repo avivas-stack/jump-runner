@@ -3,17 +3,22 @@
 :root {
   --background: #fafaf9;
   --foreground: #1c1917;
+  /* Segoe UI isn't a web font (no license to embed it) — visitors on Windows get the
+     real thing; everyone else (all of mobile included) falls back to Assistant, a
+     Hebrew-friendly sans in the same clean "system UI" spirit, rather than a generic
+     system sans. */
+  --font-segoe: "Segoe UI", var(--font-assistant), Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-heebo);
-  --font-serif: var(--font-serif);
+  --font-sans: var(--font-segoe);
+  --font-serif: var(--font-segoe);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-heebo), Arial, Helvetica, sans-serif;
+  font-family: var(--font-segoe);
 }
