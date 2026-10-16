@@ -31,9 +31,14 @@ export class TavilySearchProvider implements SearchProvider {
           // "prioritize Hebrew/Israeli... while supporting English and international sources".
           ...(opts.preferCountry ? { country: opts.preferCountry } : {}),
           ...(opts.preferLanguage ? { language: opts.preferLanguage } : {}),
-          ...(opts.preferDomains?.length
-            ? { include_domains: opts.preferDomains, include_domains_mode: "prefer" }
-            : {}),
+          // restrictDomains is a genuine filter (omitting include_domains_mode defaults
+          // to strict), unlike preferDomains above — used only for the guaranteed
+          // Israeli-source fallback search, never alongside preferDomains in practice.
+          ...(opts.restrictDomains?.length
+            ? { include_domains: opts.restrictDomains }
+            : opts.preferDomains?.length
+              ? { include_domains: opts.preferDomains, include_domains_mode: "prefer" }
+              : {}),
         }),
         signal: AbortSignal.timeout(10_000),
       });

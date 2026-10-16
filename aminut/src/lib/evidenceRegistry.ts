@@ -76,3 +76,20 @@ export const FACT_CHECKER_HOSTS = [
 ];
 
 const OFFICIAL_HOSTS = ["gov.il", ".gov", "knesset.gov.il", "cbs.gov.il"];
+
+/**
+ * Mainstream Israeli news outlets (deliberately broad, not sorted by political lean),
+ * used in pipeline.ts as a hard domain filter — not a ranking boost — for a guaranteed
+ * fallback search when a Hebrew claim's main query didn't surface any genuine Hebrew
+ * source. The usual search options only ever bias ranking, so they can't fix a query
+ * where no Hebrew-language source happened to out-rank international coverage.
+ */
+export const ISRAELI_NEWS_HOSTS = [
+  "ynet.co.il",
+  "walla.co.il",
+  "mako.co.il",
+  "haaretz.co.il",
+  "globes.co.il",
+  "kan.org.il",
+  "calcalist.co.il",
+];

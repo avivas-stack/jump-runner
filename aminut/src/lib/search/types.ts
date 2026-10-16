@@ -13,6 +13,8 @@ export interface SearchOptions {
   preferLanguage?: string;
   /** Boosts (never restricts to) results from these hostnames, e.g. known fact-checking sites. */
   preferDomains?: string[];
+  /** Strictly restricts results to these hostnames — unlike preferDomains, a real filter. */
+  restrictDomains?: string[];
 }
 
 export interface SearchProvider {

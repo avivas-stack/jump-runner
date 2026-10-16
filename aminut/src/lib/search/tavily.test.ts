@@ -53,6 +53,34 @@ describe("TavilySearchProvider", () => {
     expect(body.include_domains_mode).toBe("prefer");
   });
 
+  it("passes restrictDomains as include_domains with no mode (a genuine strict filter, unlike preferDomains)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    global.fetch = fetchMock;
+
+    const provider = new TavilySearchProvider("test-key");
+    await provider.search("query", { maxResults: 5, restrictDomains: ["ynet.co.il", "haaretz.co.il"] });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.include_domains).toEqual(["ynet.co.il", "haaretz.co.il"]);
+    expect(body).not.toHaveProperty("include_domains_mode");
+  });
+
+  it("prefers restrictDomains over preferDomains if both were somehow passed together", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    global.fetch = fetchMock;
+
+    const provider = new TavilySearchProvider("test-key");
+    await provider.search("query", {
+      maxResults: 5,
+      preferDomains: ["fakereporter.net"],
+      restrictDomains: ["ynet.co.il"],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.include_domains).toEqual(["ynet.co.il"]);
+    expect(body).not.toHaveProperty("include_domains_mode");
+  });
+
   it("omits include_domains entirely when no preferDomains are requested", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
     global.fetch = fetchMock;

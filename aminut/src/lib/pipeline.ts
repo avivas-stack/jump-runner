@@ -1,6 +1,6 @@
 import { extractClaims } from "./claimExtraction";
 import { evaluateClaim } from "./evaluation";
-import { EvidenceRegistry, classifySourceType, FACT_CHECKER_HOSTS } from "./evidenceRegistry";
+import { EvidenceRegistry, classifySourceType, FACT_CHECKER_HOSTS, ISRAELI_NEWS_HOSTS } from "./evidenceRegistry";
 import { retrievePageText } from "./pageRetrieval";
 import { buildReport } from "./report";
 import { getSearchProvider } from "./search";
@@ -151,10 +151,52 @@ export async function runVerifyPipeline(
           });
           claimEvidence.push(item);
         }
-      } catch {
+      } catch (err) {
         // A single failed query must not kill the whole analysis; it just yields fewer
         // results for this claim, and the final report marks reduced confidence below.
+        // Still log it — a silent failure here used to be indistinguishable from "this
+        // query genuinely found nothing," which hid real outages from anyone watching.
+        console.error(`pipeline: search query failed for claim ${claim.id}:`, err instanceof Error ? err.message : err);
         continue;
+      }
+    }
+
+    // preferCountry/preferLanguage/preferDomains above only ever bias ranking, never
+    // filter — so a Hebrew claim can still end up with zero genuine Hebrew sources if
+    // international coverage simply out-ranked it. Guarantee one more attempt, hard-
+    // restricted to mainstream Israeli outlets, before accepting that gap.
+    const hasHebrewEvidence = claimEvidence.some((e) => isHebrew(e.title + e.excerpt));
+    if (claimIsHebrew && !hasHebrewEvidence && searchesUsed < config.maxSearchesPerAnalysis) {
+      const fallbackKey = `${normalizeQuery(claim.normalizedText)}::il-news`;
+      if (!issuedQueries.has(fallbackKey)) {
+        issuedQueries.add(fallbackKey);
+        try {
+          const results = await searchProvider!.search(claim.normalizedText, {
+            maxResults: config.maxResultsPerSearch,
+            restrictDomains: ISRAELI_NEWS_HOSTS,
+          });
+          searchesUsed += 1;
+          for (const result of results) {
+            const item = registry.add({
+              claimId: claim.id,
+              url: result.url,
+              title: result.title,
+              publisher: safeHostname(result.url),
+              publicationDate: result.publishedDate,
+              retrievedAt: new Date().toISOString(),
+              sourceType: classifySourceType(result.url),
+              excerpt: result.content,
+              accessible: true,
+              inaccessibleReason: null,
+            });
+            claimEvidence.push(item);
+          }
+        } catch (err) {
+          console.error(
+            `pipeline: Israeli-news fallback search failed for claim ${claim.id}:`,
+            err instanceof Error ? err.message : err
+          );
+        }
       }
     }
 
