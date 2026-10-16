@@ -126,8 +126,22 @@ export async function getVisualAiOpinion(
   base64Data: string,
   mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
 ): Promise<VisualAiOpinion> {
-  const samples = await Promise.all(
+  const settled = await Promise.allSettled(
     Array.from({ length: CONSENSUS_SAMPLE_COUNT }, () => sampleVisualAiOpinion(base64Data, mediaType))
   );
+  // Promise.all would fail the whole opinion (silently, from the API route's
+  // perspective — the caller just sees it throw and drops the opinion entirely)
+  // the instant any single sample errors, e.g. a rate limit from tripling the
+  // call volume, or the model occasionally declining to use the tool on a
+  // sensitive image of real people. Use whichever samples actually succeeded
+  // instead of discarding the whole result over one failed sample.
+  const samples = settled
+    .filter((r): r is PromiseFulfilledResult<VisualAiOpinion> => r.status === "fulfilled")
+    .map((r) => r.value);
+
+  if (samples.length === 0) {
+    const firstFailure = settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    throw firstFailure?.reason ?? new Error("כל הדגימות של חוות הדעת החזותית נכשלו");
+  }
   return pickConsensusOpinion(samples);
 }

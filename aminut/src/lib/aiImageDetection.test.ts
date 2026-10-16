@@ -113,4 +113,35 @@ describe("getVisualAiOpinion", () => {
     expect(result.likelyAiGenerated).toBe("unsure");
     expect(result.rationale).toMatch(/לא הייתה עקבית/);
   });
+
+  it("still returns an opinion from the samples that succeeded when one sample errors (e.g. a rate limit from 3x the call volume), instead of discarding the whole result", async () => {
+    callStructuredMock
+      .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "x", visualSigns: ["a"] })
+      .mockRejectedValueOnce(new Error("429 rate limited"))
+      .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "y", visualSigns: ["a", "b"] });
+
+    const result = await getVisualAiOpinion("base64data", "image/jpeg");
+
+    expect(result.likelyAiGenerated).toBe("yes");
+  });
+
+  it("falls back to the single sample that succeeded when two of three error out, rather than losing the opinion entirely", async () => {
+    callStructuredMock
+      .mockRejectedValueOnce(new Error("429 rate limited"))
+      .mockRejectedValueOnce(new Error("model declined to use the tool"))
+      .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "x", visualSigns: ["a"] });
+
+    const result = await getVisualAiOpinion("base64data", "image/jpeg");
+
+    expect(result.likelyAiGenerated).toBe("yes");
+  });
+
+  it("only propagates an error when every sample fails", async () => {
+    callStructuredMock
+      .mockRejectedValueOnce(new Error("fail 1"))
+      .mockRejectedValueOnce(new Error("fail 2"))
+      .mockRejectedValueOnce(new Error("fail 3"));
+
+    await expect(getVisualAiOpinion("base64data", "image/jpeg")).rejects.toThrow(/fail/);
+  });
 });
