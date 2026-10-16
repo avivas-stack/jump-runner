@@ -4,6 +4,12 @@ import { config, hasLlmCredentials } from "@/lib/config";
 import { getVisualAiOpinion, scanForProvenanceMarkers } from "@/lib/aiImageDetection";
 import { DetectAiImageRequestSchema } from "@/lib/types";
 
+// The visual-opinion call now fires 3 parallel vision requests to Claude (self-consistency
+// sampling) instead of 1, so the route's own latency is higher than Vercel's 10s default
+// function timeout leaves much room for — a single slow sample among the three can push the
+// whole request past it. 60s matches what Hobby/Pro both allow without extra configuration.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const clientKey = clientKeyFromRequest(request);
   const rate = checkRateLimit(`aiimg:${clientKey}`, config.imageRateLimitPerIpPerHour);
@@ -40,9 +46,12 @@ export async function POST(request: NextRequest) {
   if (hasLlmCredentials()) {
     try {
       visualOpinion = await getVisualAiOpinion(parsed.data.imageBase64, parsed.data.mediaType);
-    } catch {
+    } catch (err) {
       // Best-effort only: the metadata scan result is still returned even if the
-      // visual-opinion model call fails (rate limit, transient API error, etc.).
+      // visual-opinion model call fails (rate limit, transient API error, etc.) — but
+      // log the real reason. Silently swallowing it here previously made a failure here
+      // indistinguishable from a genuine "unsure", with no way to tell them apart later.
+      console.error("[detect-ai-image] visual opinion failed:", err);
       visualOpinion = null;
     }
   }
