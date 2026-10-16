@@ -65,4 +65,26 @@ describe("getVisualAiOpinion", () => {
     expect(call.system).toMatch(/ידיים|אצבעות/);
     expect(result.visualSigns).toHaveLength(2);
   });
+
+  it("instructs the model to reason about real-world plausibility of recognizable public figures, not just pixel artifacts", async () => {
+    callStructuredMock.mockResolvedValueOnce({
+      likelyAiGenerated: "yes",
+      rationale: "המצב המתואר אינו סביר בהתחשב על העובדות הידועות על הדמויות.",
+      visualSigns: ["שתי דמויות ציבוריות מוצגות במפגש שאינו סביר בהתחשב על מעמדן"],
+    });
+
+    await getVisualAiOpinion("base64data", "image/jpeg");
+
+    const call = callStructuredMock.mock.calls[0][0];
+    expect(call.system).toMatch(/דמות ציבורית|דמויות ציבוריות/);
+  });
+
+  it("uses the stronger evaluation-tier model, not the cheap text-extraction model, since this task needs real visual scrutiny and world knowledge", async () => {
+    callStructuredMock.mockResolvedValueOnce({ likelyAiGenerated: "unsure", rationale: "x", visualSigns: [] });
+
+    await getVisualAiOpinion("base64data", "image/jpeg");
+
+    const call = callStructuredMock.mock.calls[0][0];
+    expect(call.model).toBe("claude-sonnet-5-5");
+  });
 });
