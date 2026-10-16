@@ -83,17 +83,16 @@ async function sampleVisualAiOpinion(
   });
 }
 
-const CONSENSUS_SAMPLE_COUNT = 3;
-
 /**
  * Picks the majority verdict across independent samples of the same call. The
  * Anthropic API doesn't expose a temperature/determinism knob on current models
  * (passing one is rejected outright), so a single sample of a genuinely borderline
  * image can land on "yes" one time and "unsure" the next — unacceptable for a
  * credibility tool, where the same image should get the same answer. Requiring
- * at least 2 of 3 samples to agree smooths that out; a real three-way split (no
- * sample has more votes than any other) honestly reflects "the model itself is
- * unsure" rather than picking one arbitrary sample's answer.
+ * samples to agree smooths that out; a real split with no majority (every verdict
+ * tied) honestly reflects "the model itself is unsure" rather than picking one
+ * arbitrary sample's answer. Called with 2 samples (the common case) or 3 (only
+ * when the first 2 disagreed) — see getVisualAiOpinion below.
  */
 function pickConsensusOpinion(samples: VisualAiOpinion[]): VisualAiOpinion {
   const counts: Record<VisualAiOpinion["likelyAiGenerated"], number> = { yes: 0, no: 0, unsure: 0 };
@@ -117,6 +116,14 @@ function pickConsensusOpinion(samples: VisualAiOpinion[]): VisualAiOpinion {
     .sort((a, b) => b.visualSigns.length - a.visualSigns.length)[0];
 }
 
+function splitSettled<T>(settled: PromiseSettledResult<T>[]): { values: T[]; firstError: unknown } {
+  const values = settled
+    .filter((r): r is PromiseFulfilledResult<T> => r.status === "fulfilled")
+    .map((r) => r.value);
+  const firstRejection = settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  return { values, firstError: firstRejection?.reason };
+}
+
 /**
  * Non-authoritative, best-effort visual impression from a vision-capable model —
  * deliberately separate from the metadata scan above and framed as an opinion, not
@@ -126,22 +133,25 @@ export async function getVisualAiOpinion(
   base64Data: string,
   mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
 ): Promise<VisualAiOpinion> {
-  const settled = await Promise.allSettled(
-    Array.from({ length: CONSENSUS_SAMPLE_COUNT }, () => sampleVisualAiOpinion(base64Data, mediaType))
-  );
-  // Promise.all would fail the whole opinion (silently, from the API route's
-  // perspective — the caller just sees it throw and drops the opinion entirely)
-  // the instant any single sample errors, e.g. a rate limit from tripling the
-  // call volume, or the model occasionally declining to use the tool on a
-  // sensitive image of real people. Use whichever samples actually succeeded
-  // instead of discarding the whole result over one failed sample.
-  const samples = settled
-    .filter((r): r is PromiseFulfilledResult<VisualAiOpinion> => r.status === "fulfilled")
-    .map((r) => r.value);
+  const firstPair = await Promise.allSettled([
+    sampleVisualAiOpinion(base64Data, mediaType),
+    sampleVisualAiOpinion(base64Data, mediaType),
+  ]);
+  const { values: firstPairSamples, firstError: firstPairError } = splitSettled(firstPair);
+
+  // Fast path: the first two independent samples already agree — every single check
+  // otherwise paid for a 3rd sample it didn't need, tripling the cost (and latency) of
+  // the common case just to guard against the rare one where they disagree.
+  if (firstPairSamples.length === 2 && firstPairSamples[0].likelyAiGenerated === firstPairSamples[1].likelyAiGenerated) {
+    return pickConsensusOpinion(firstPairSamples);
+  }
+
+  const third = await Promise.allSettled([sampleVisualAiOpinion(base64Data, mediaType)]);
+  const { values: thirdSamples, firstError: thirdError } = splitSettled(third);
+  const samples = [...firstPairSamples, ...thirdSamples];
 
   if (samples.length === 0) {
-    const firstFailure = settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
-    throw firstFailure?.reason ?? new Error("כל הדגימות של חוות הדעת החזותית נכשלו");
+    throw firstPairError ?? thirdError ?? new Error("כל הדגימות של חוות הדעת החזותית נכשלו");
   }
   return pickConsensusOpinion(samples);
 }

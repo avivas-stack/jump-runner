@@ -175,6 +175,11 @@ export const DetectAiImageResultSchema = z.object({
     .array(z.string())
     .describe("Known AI-provenance markers (e.g. C2PA, SynthID, IPTC DigitalSourceType) found in the file's own metadata, if any."),
   visualOpinion: VisualAiOpinionSchema.nullable(),
+  // True only when the visual-opinion call itself errored (rate limit, transient API
+  // failure, etc.) — distinct from a null opinion because credentials simply aren't
+  // configured, and distinct from the model's own honest "unsure" verdict. Without this,
+  // a technical failure and a genuine "can't tell" looked identical to the user.
+  visualOpinionFailed: z.boolean().default(false),
 });
 export type DetectAiImageResult = z.infer<typeof DetectAiImageResultSchema>;
 

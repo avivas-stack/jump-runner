@@ -88,7 +88,19 @@ describe("getVisualAiOpinion", () => {
     expect(call.model).toBe("claude-sonnet-5-5");
   });
 
-  it("samples the model 3 times and goes with the majority verdict, since the API has no determinism knob and a single borderline sample can go either way", async () => {
+  it("stops at 2 samples when they already agree, instead of always paying for a 3rd", async () => {
+    callStructuredMock
+      .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "x", visualSigns: ["a"] })
+      .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "y", visualSigns: ["a", "b"] });
+
+    const result = await getVisualAiOpinion("base64data", "image/jpeg");
+
+    expect(callStructuredMock).toHaveBeenCalledTimes(2);
+    expect(result.likelyAiGenerated).toBe("yes");
+    expect(result.visualSigns).toEqual(["a", "b"]);
+  });
+
+  it("escalates to a 3rd sample and goes with the majority verdict when the first 2 disagree", async () => {
     callStructuredMock
       .mockResolvedValueOnce({ likelyAiGenerated: "unsure", rationale: "x", visualSigns: [] })
       .mockResolvedValueOnce({ likelyAiGenerated: "yes", rationale: "y", visualSigns: ["a", "b"] })

@@ -31,6 +31,13 @@ function computeVerdict(result: DetectAiImageResult): { label: string; tone: Ver
   if (result.credentialsMarkers.length > 0) {
     return { label: "נמצאו סימני מקור של AI במטא-דאטה", tone: "block" };
   }
+  // Distinct from the model's own honest "unsure" below: this is a technical failure
+  // (rate limit, transient API error), not the model actually looking and not finding
+  // a clear answer — conflating the two would quietly misrepresent a dropped check
+  // as a real, if inconclusive, one.
+  if (result.visualOpinionFailed) {
+    return { label: "הבדיקה החזותית נכשלה זמנית — נסו שוב", tone: "caution" };
+  }
   const opinion = result.visualOpinion?.likelyAiGenerated;
   if (opinion === "yes") {
     return { label: "ככל הנראה נוצרה או עובדה על ידי AI", tone: "block" };
@@ -172,6 +179,16 @@ export function AiImageDetector() {
                   ))}
                 </ul>
               )}
+            </div>
+          )}
+
+          {result.visualOpinionFailed && (
+            <div className="rounded-md border border-amber-200 bg-amber-50/60 p-3">
+              <h3 className="text-sm font-semibold text-stone-900">חוות דעת חזותית</h3>
+              <p className="mt-1 text-sm text-amber-800">
+                הבדיקה החזותית נכשלה הפעם עקב תקלה זמנית (לדוגמה עומס זמני על השירות) — זה לא אומר
+                שהתמונה תקינה, רק שלא הצלחנו לבדוק אותה הפעם. כדאי לנסות שוב.
+              </p>
             </div>
           )}
 

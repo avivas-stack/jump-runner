@@ -43,18 +43,20 @@ export async function POST(request: NextRequest) {
   const credentialsMarkers = scanForProvenanceMarkers(parsed.data.imageBase64);
 
   let visualOpinion = null;
+  let visualOpinionFailed = false;
   if (hasLlmCredentials()) {
     try {
       visualOpinion = await getVisualAiOpinion(parsed.data.imageBase64, parsed.data.mediaType);
     } catch (err) {
       // Best-effort only: the metadata scan result is still returned even if the
       // visual-opinion model call fails (rate limit, transient API error, etc.) — but
-      // log the real reason. Silently swallowing it here previously made a failure here
-      // indistinguishable from a genuine "unsure", with no way to tell them apart later.
+      // log the real reason and flag it, so the UI can tell this apart from the
+      // model's own honest "unsure" verdict instead of showing the same message for both.
       console.error("[detect-ai-image] visual opinion failed:", err);
       visualOpinion = null;
+      visualOpinionFailed = true;
     }
   }
 
-  return Response.json({ credentialsMarkers, visualOpinion });
+  return Response.json({ credentialsMarkers, visualOpinion, visualOpinionFailed });
 }
