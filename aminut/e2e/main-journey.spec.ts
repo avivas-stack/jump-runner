@@ -41,6 +41,7 @@ const mockReport: Report = {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: "פרסום רשמי של משרד האוצר",
+      likelyOrigin: null,
     },
   ],
   evidence: [

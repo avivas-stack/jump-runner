@@ -87,6 +87,7 @@ export async function runVerifyPipeline(
         contradictingEvidenceIds: [],
         missingContext: null,
         whatWouldChangeConclusion: "הגדרת מפתח API תקין לספק חיפוש (TAVILY_API_KEY) תאפשר בדיקה אמיתית.",
+        likelyOrigin: null,
       });
       continue;
     }

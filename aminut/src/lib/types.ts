@@ -102,6 +102,13 @@ export const ClaimEvaluationSchema = z.object({
   contradictingEvidenceIds: z.array(z.string()).default([]),
   missingContext: z.string().nullable().default(null),
   whatWouldChangeConclusion: z.string().nullable().default(null),
+  likelyOrigin: z
+    .string()
+    .nullable()
+    .default(null)
+    .describe(
+      "Hebrew explanation (1-3 sentences) of where this claim likely originated and how it may have been distorted along the way — e.g. a quote taken out of context, an old story recirculated as if new, satire mistaken for real news, a mistranslation, a real event with altered details. Only fill this when there's an actual evidence-based signal for it (e.g. a much older publication date, a mismatch between the claim and its cited source, a known satire outlet); null when there's nothing but speculation."
+    ),
 });
 export type ClaimEvaluation = z.infer<typeof ClaimEvaluationSchema>;
 

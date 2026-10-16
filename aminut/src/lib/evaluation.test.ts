@@ -54,6 +54,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), evidence);
@@ -72,6 +73,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: ["e1"],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), evidence);
@@ -89,6 +91,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: "הסכום פרוס על פני שלוש שנים, לא תקציב חד פעמי",
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), [makeEvidence()]);
@@ -106,6 +109,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: "הכרזה קודמת ב-2025 לא הוזכרה",
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), [makeEvidence()]);
@@ -122,6 +126,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: "דיווח ישיר מראיית העירייה",
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), []);
@@ -138,6 +143,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), [makeEvidence()]);
@@ -159,6 +165,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: "הודעה רשמית מתועדת מהעירייה שתציג את התקציב הנטען",
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), evidence);
@@ -180,6 +187,7 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: ["e2"],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), evidence);
@@ -200,10 +208,45 @@ describe("evaluateClaim", () => {
       contradictingEvidenceIds: ["e_also_fake"],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const result = await evaluateClaim(makeClaim(), evidence);
     expect(result.supportingEvidenceIds).toEqual(["e1"]);
     expect(result.contradictingEvidenceIds).toEqual([]);
+  });
+
+  it("passes through a likely-origin explanation when the model identifies a concrete distortion signal", async () => {
+    callStructuredMock.mockResolvedValueOnce({
+      claimId: "c1",
+      classification: "מטעה",
+      confidence: "medium",
+      rationale: "הציטוט נכון אך נלקח מריאיון ישן",
+      supportingEvidenceIds: ["e1"],
+      contradictingEvidenceIds: [],
+      missingContext: null,
+      whatWouldChangeConclusion: null,
+      likelyOrigin: "הציטוט מקורו בראיון מ-2021 ומופץ מחדש כאילו נאמר היום",
+    });
+
+    const result = await evaluateClaim(makeClaim(), [makeEvidence()]);
+    expect(result.likelyOrigin).toBe("הציטוט מקורו בראיון מ-2021 ומופץ מחדש כאילו נאמר היום");
+  });
+
+  it("leaves likely-origin null when there's no concrete signal to base a guess on", async () => {
+    callStructuredMock.mockResolvedValueOnce({
+      claimId: "c1",
+      classification: "לא ניתן לאימות",
+      confidence: "medium",
+      rationale: "אין מספיק ראיות",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+      missingContext: null,
+      whatWouldChangeConclusion: null,
+      likelyOrigin: null,
+    });
+
+    const result = await evaluateClaim(makeClaim(), []);
+    expect(result.likelyOrigin).toBeNull();
   });
 });

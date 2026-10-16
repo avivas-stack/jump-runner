@@ -105,6 +105,7 @@ describe("runVerifyPipeline", () => {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     });
 
     const searchMock = vi.fn().mockResolvedValue([

@@ -50,6 +50,7 @@ const report: Report = {
       contradictingEvidenceIds: [],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     },
     {
       claimId: "c2",
@@ -60,6 +61,7 @@ const report: Report = {
       contradictingEvidenceIds: ["e1"],
       missingContext: null,
       whatWouldChangeConclusion: null,
+      likelyOrigin: null,
     },
   ],
   evidence: [
@@ -257,5 +259,21 @@ describe("ReportView", () => {
   it("omits the fact-checking-sites section when no fact-checker evidence was found", () => {
     render(<ReportView report={report} />);
     expect(screen.queryByText("מה אתרי בדיקת עובדות אחרים אמרו")).not.toBeInTheDocument();
+  });
+
+  it("shows a 'where might this have come from' section when the evaluation provides a likely origin", () => {
+    const singleClaimReport = {
+      ...report,
+      claims: [report.claims[0]],
+      evaluations: [{ ...report.evaluations[0], likelyOrigin: "הציטוט נלקח מתוך ראיון ישן מ-2019 ומוצג כאילו נאמר השבוע" }],
+    };
+    render(<ReportView report={singleClaimReport} />);
+    expect(screen.getByText("מאיפה ייתכן שהגיע המידע?")).toBeInTheDocument();
+    expect(screen.getByText(/ראיון ישן מ-2019/)).toBeInTheDocument();
+  });
+
+  it("omits the 'where might this have come from' section when no likely origin was determined", () => {
+    render(<ReportView report={report} />);
+    expect(screen.queryByText("מאיפה ייתכן שהגיע המידע?")).not.toBeInTheDocument();
   });
 });

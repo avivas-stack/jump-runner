@@ -35,6 +35,13 @@ export function ClaimCard({
         </p>
       )}
 
+      {evaluation.likelyOrigin && (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/60 p-3">
+          <h4 className="font-serif text-sm font-bold text-stone-900">מאיפה ייתכן שהגיע המידע?</h4>
+          <p className="mt-1 text-sm leading-relaxed text-stone-700">{evaluation.likelyOrigin}</p>
+        </div>
+      )}
+
       {supporting.length > 0 && (
         <EvidenceGroup title="ראיות התומכות בהערכה" items={supporting} />
       )}

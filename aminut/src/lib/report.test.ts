@@ -31,6 +31,7 @@ const evaluation: ClaimEvaluation = {
   contradictingEvidenceIds: [],
   missingContext: null,
   whatWouldChangeConclusion: null,
+  likelyOrigin: null,
 };
 
 const evidence: EvidenceItem = {
