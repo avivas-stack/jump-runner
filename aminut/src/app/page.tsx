@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { ClaimForm } from "@/components/ClaimForm";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { Sidebar } from "@/components/Sidebar";
@@ -206,6 +207,10 @@ export default function Home() {
         הכלי מספק עזרה לחשיבה ביקורתית בהתבסס על מקורות שנמצאו במועד הבדיקה.
         <br />
         ייתכנו טעויות בבדיקה, ולכן יש להפעיל ביקורת ושיקול דעת.
+        <br />
+        <Link href="/privacy" className="underline hover:text-stone-600">
+          מדיניות פרטיות ותנאי שימוש
+        </Link>
       </footer>
     </div>
   );
