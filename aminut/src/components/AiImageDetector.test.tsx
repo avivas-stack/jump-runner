@@ -61,4 +61,31 @@ describe("AiImageDetector", () => {
 
     await waitFor(() => expect(screen.getByText("ככל הנראה נוצרה או עובדה על ידי AI")).toBeInTheDocument());
   });
+
+  it("shows the server's own Hebrew error message as-is when the API call fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({ error: "חרגת ממכסת הבדיקות השעתית. נסה שוב מאוחר יותר." }) })
+    );
+    render(<AiImageDetector />);
+
+    await uploadImage();
+
+    await waitFor(() => expect(screen.getByText("חרגת ממכסת הבדיקות השעתית. נסה שוב מאוחר יותר.")).toBeInTheDocument());
+  });
+
+  it("never shows a raw browser/runtime exception message to the user — only a clear Hebrew fallback", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("The string did not match the expected pattern."))
+    );
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<AiImageDetector />);
+
+    await uploadImage();
+
+    await waitFor(() => expect(screen.getByText(/אירעה שגיאה בבדיקת התמונה/)).toBeInTheDocument());
+    expect(screen.queryByText(/did not match the expected pattern/)).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
 });

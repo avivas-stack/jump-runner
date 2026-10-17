@@ -6,6 +6,9 @@ import type { DetectAiImageResult } from "@/lib/types";
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_IMAGE_BYTES = 5_000_000;
 
+/** An error whose message is our own clear Hebrew text, safe to show the user as-is. */
+class KnownError extends Error {}
+
 const OPINION_LABEL: Record<"yes" | "no" | "unsure", string> = {
   yes: "נראית כמו תמונה שנוצרה או עובדה על ידי AI",
   no: "לא נראתה עדות חזותית ברורה ל-AI",
@@ -53,6 +56,7 @@ export function AiImageDetector() {
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<DetectAiImageResult | null>(null);
+  const [wasCompressed, setWasCompressed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -60,6 +64,7 @@ export function AiImageDetector() {
     setError(null);
     setPreviewUrl(null);
     setResult(null);
+    setWasCompressed(false);
   };
 
   const handleImageSelect = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -69,35 +74,47 @@ export function AiImageDetector() {
 
     setError(null);
     setResult(null);
+    setWasCompressed(false);
 
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       setError("סוג קובץ לא נתמך. יש להעלות JPEG, PNG, GIF או WebP בלבד.");
       setStatus("error");
       return;
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError(`התמונה גדולה מדי (מגבלה: ${Math.floor(MAX_IMAGE_BYTES / 1_000_000)}MB).`);
-      setStatus("error");
-      return;
-    }
 
     setStatus("loading");
-    setPreviewUrl(URL.createObjectURL(file));
     try {
-      const base64 = await fileToBase64(file);
+      // Phones routinely produce photos/screenshots over the limit (especially shared
+      // in from another app, as on iOS) — shrink those client-side instead of just
+      // refusing them, rather than forcing the person to go find a smaller copy.
+      let blobToUpload: Blob = file;
+      let mediaType: string = file.type;
+      if (file.size > MAX_IMAGE_BYTES) {
+        blobToUpload = await compressUntilUnderLimit(file);
+        mediaType = blobToUpload.type;
+        setWasCompressed(true);
+      }
+
+      setPreviewUrl(URL.createObjectURL(blobToUpload));
+      const base64 = await fileToBase64(blobToUpload);
       const res = await fetch("/api/detect-ai-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
+        body: JSON.stringify({ imageBase64: base64, mediaType }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error ?? "שגיאה בבדיקת התמונה");
+        throw new KnownError(data.error ?? "שגיאה בבדיקת התמונה");
       }
       setResult(data);
       setStatus("idle");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "שגיאה לא צפויה בבדיקת התמונה");
+      // Never leak a raw browser/runtime exception (e.g. a cryptic WebKit DOMException)
+      // to a Hebrew-speaking user — only a KnownError carries a message we wrote
+      // ourselves and know is clear Hebrew; log the real detail either way.
+      console.error("AI image detection failed:", err);
+      const message = err instanceof KnownError ? err.message : "אירעה שגיאה בבדיקת התמונה. נסו שוב, או עם תמונה אחרת.";
+      setError(message);
       setStatus("error");
     }
   };
@@ -131,7 +148,7 @@ export function AiImageDetector() {
         >
           {status === "loading"
             ? "בודק את התמונה..."
-            : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP, עד 5MB)"}
+            : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP) — תמונות גדולות יכווצו אוטומטית"}
         </button>
         {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
       </div>
@@ -150,6 +167,13 @@ export function AiImageDetector() {
               {computeVerdict(result).label}
             </span>
           </div>
+
+          {wasCompressed && (
+            <p className="text-xs text-stone-400">
+              התמונה הייתה גדולה מהמגבלה וכווצה אוטומטית לפני הבדיקה — בדיקת סימני המקור במטא-דאטה
+              למטה מתייחסת לעותק המכווץ, לא לקובץ המקורי.
+            </p>
+          )}
 
           <div>
             <h3 className="text-sm font-semibold text-stone-900">סימני מקור במטא-דאטה</h3>
@@ -211,7 +235,7 @@ export function AiImageDetector() {
   );
 }
 
-function fileToBase64(file: File): Promise<string> {
+function fileToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -219,6 +243,70 @@ function fileToBase64(file: File): Promise<string> {
       resolve(result.slice(result.indexOf(",") + 1));
     };
     reader.onerror = () => reject(reader.error ?? new Error("קריאת הקובץ נכשלה"));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
+}
+
+function loadImageElement(file: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new KnownError("לא ניתן היה לפתוח את התמונה בדפדפן. נסו תמונה אחרת."));
+    };
+    img.src = objectUrl;
+  });
+}
+
+function downscaleToJpeg(img: HTMLImageElement, maxDimension: number, quality: number): Promise<Blob> {
+  const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return Promise.reject(new KnownError("לא ניתן היה לעבד את התמונה בדפדפן זה. נסו תמונה קטנה יותר."));
+  }
+  ctx.drawImage(img, 0, 0, width, height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new KnownError("לא ניתן היה לדחוס את התמונה. נסו תמונה אחרת."))),
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
+/**
+ * Shrinks an over-the-limit image until it fits, instead of just refusing it — phones
+ * routinely produce photos/screenshots over 5MB, especially when shared in from another
+ * app. Tries progressively smaller dimensions/quality; gives up with a clear message
+ * only if even the smallest attempt still doesn't fit.
+ *
+ * Trade-off: re-encoding through canvas strips any original file metadata, so the
+ * metadata-provenance check below only ever reflects the original file when it was
+ * already under the limit and sent as-is.
+ */
+async function compressUntilUnderLimit(file: File): Promise<Blob> {
+  const img = await loadImageElement(file);
+  const attempts: [number, number][] = [
+    [1600, 0.85],
+    [1200, 0.75],
+    [900, 0.65],
+  ];
+  let lastBlob: Blob | null = null;
+  for (const [maxDimension, quality] of attempts) {
+    lastBlob = await downscaleToJpeg(img, maxDimension, quality);
+    if (lastBlob.size <= MAX_IMAGE_BYTES) return lastBlob;
+  }
+  throw new KnownError(
+    `התמונה גדולה מדי גם אחרי דחיסה (מגבלה: ${Math.floor(MAX_IMAGE_BYTES / 1_000_000)}MB). נסו תמונה קטנה יותר או צילום מסך ממוקד יותר.`
+  );
 }
