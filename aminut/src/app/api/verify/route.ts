@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   if (maintenance) return maintenance;
 
   const clientKey = clientKeyFromRequest(request);
-  const rate = checkRateLimit(clientKey, config.rateLimitPerIpPerHour);
+  const rate = await checkRateLimit(clientKey, config.rateLimitPerIpPerHour);
   if (!rate.allowed) {
     return Response.json(
       { error: "חרגת ממכסת הבדיקות השעתית. נסה שוב מאוחר יותר." },

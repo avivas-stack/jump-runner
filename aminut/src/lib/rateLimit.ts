@@ -1,16 +1,22 @@
-/**
- * In-memory, per-IP sliding-window rate limiter.
- *
- * Known limitation: this state lives in a single server process's memory.
- * On a multi-instance or serverless deployment (e.g. Vercel's default), each
- * instance tracks its own counters, so the effective global limit is higher
- * than configured. For real production use behind multiple instances, move
- * this to a shared store (e.g. Redis/Upstash) keyed the same way.
- */
+import { Redis } from "@upstash/redis";
+import { config, hasDurableRateLimitStore } from "./config";
+
 const windowMs = 60 * 60 * 1000;
+const windowSeconds = windowMs / 1000;
+
+/**
+ * In-memory, per-IP sliding-window rate limiter — the fallback used whenever no durable
+ * store is configured (see checkRateLimit below).
+ *
+ * Known limitation: this state lives in a single server process's memory. On a
+ * multi-instance or serverless deployment (e.g. Vercel's default), each instance tracks
+ * its own counters, so the effective global limit is higher than configured, and resets
+ * on every cold start — it cannot actually bound total cost under real concurrent/viral
+ * traffic. Connect Upstash Redis (see UPSTASH_REDIS_REST_URL in config.ts) to close that gap.
+ */
 const hits = new Map<string, number[]>();
 
-export function checkRateLimit(key: string, maxPerWindow: number): { allowed: boolean; remaining: number } {
+function checkRateLimitInMemory(key: string, maxPerWindow: number): { allowed: boolean; remaining: number } {
   const now = Date.now();
   const existing = hits.get(key) ?? [];
   const recent = existing.filter((t) => now - t < windowMs);
@@ -21,6 +27,46 @@ export function checkRateLimit(key: string, maxPerWindow: number): { allowed: bo
   recent.push(now);
   hits.set(key, recent);
   return { allowed: true, remaining: maxPerWindow - recent.length };
+}
+
+let redisClient: Redis | null = null;
+function getRedis(): Redis {
+  if (!redisClient) {
+    redisClient = new Redis({ url: config.upstashRedisRestUrl!, token: config.upstashRedisRestToken! });
+  }
+  return redisClient;
+}
+
+/**
+ * Fixed-window counter in Redis — shared across every serverless instance, so (unlike
+ * the in-memory fallback) it actually bounds total request volume for a key regardless
+ * of how many instances are running. Slightly less precise at window boundaries than a
+ * true sliding window, which is an acceptable trade for the simplicity of INCR + EXPIRE.
+ */
+async function checkRateLimitRedis(key: string, maxPerWindow: number): Promise<{ allowed: boolean; remaining: number }> {
+  const redisKey = `ratelimit:${key}`;
+  const count = await getRedis().incr(redisKey);
+  if (count === 1) {
+    await getRedis().expire(redisKey, windowSeconds);
+  }
+  if (count > maxPerWindow) {
+    return { allowed: false, remaining: 0 };
+  }
+  return { allowed: true, remaining: maxPerWindow - count };
+}
+
+export async function checkRateLimit(key: string, maxPerWindow: number): Promise<{ allowed: boolean; remaining: number }> {
+  if (hasDurableRateLimitStore()) {
+    try {
+      return await checkRateLimitRedis(key, maxPerWindow);
+    } catch (err) {
+      // Never let a Redis outage take the rate limiter (and therefore every paid route)
+      // down with it — fall back to the in-memory limiter for this one request.
+      console.error("checkRateLimit: Redis call failed, falling back to in-memory:", err instanceof Error ? err.message : err);
+      return checkRateLimitInMemory(key, maxPerWindow);
+    }
+  }
+  return checkRateLimitInMemory(key, maxPerWindow);
 }
 
 /**

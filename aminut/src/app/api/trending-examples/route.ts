@@ -8,7 +8,7 @@ const TRENDING_EXAMPLES_RATE_LIMIT_PER_HOUR = 60;
 
 export async function GET(request: NextRequest) {
   const clientKey = clientKeyFromRequest(request);
-  const rate = checkRateLimit(`trending:${clientKey}`, TRENDING_EXAMPLES_RATE_LIMIT_PER_HOUR);
+  const rate = await checkRateLimit(`trending:${clientKey}`, TRENDING_EXAMPLES_RATE_LIMIT_PER_HOUR);
   if (!rate.allowed) {
     return Response.json({ examples: [] }, { status: 429, headers: { "Cache-Control": "no-store" } });
   }

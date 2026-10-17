@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (maintenance) return maintenance;
 
   const clientKey = clientKeyFromRequest(request);
-  const rate = checkRateLimit(`aiimg:${clientKey}`, config.imageRateLimitPerIpPerHour);
+  const rate = await checkRateLimit(`aiimg:${clientKey}`, config.imageRateLimitPerIpPerHour);
   if (!rate.allowed) {
     return Response.json(
       { error: "חרגת ממכסת הבדיקות השעתית. נסה שוב מאוחר יותר." },

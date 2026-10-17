@@ -22,6 +22,12 @@ const EnvSchema = z.object({
   RATE_LIMIT_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
   IMAGE_RATE_LIMIT_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(10),
   MAX_IMAGE_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  // Optional: when both are set, rate limiting uses this durable, shared-across-instances
+  // store (Upstash's free tier covers this comfortably) instead of in-memory counters that
+  // reset per serverless instance. Connect the "Upstash for Redis" integration from the
+  // Vercel dashboard (Storage tab) to get these automatically — no code change needed.
+  UPSTASH_REDIS_REST_URL: z.string().min(1).optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   // Emergency brake for a viral-traffic cost spike: rate limiting here is in-memory and
   // per-serverless-instance (not a durable/global store), so it can't actually cap total
   // spend under real concurrent load across many instances. Setting this lets whoever
@@ -62,7 +68,13 @@ export const config = {
   imageRateLimitPerIpPerHour: env.IMAGE_RATE_LIMIT_PER_IP_PER_HOUR,
   maxImageBytes: env.MAX_IMAGE_BYTES,
   disablePaidEndpoints: env.DISABLE_PAID_ENDPOINTS,
+  upstashRedisRestUrl: env.UPSTASH_REDIS_REST_URL,
+  upstashRedisRestToken: env.UPSTASH_REDIS_REST_TOKEN,
 };
+
+export function hasDurableRateLimitStore(): boolean {
+  return Boolean(config.upstashRedisRestUrl && config.upstashRedisRestToken);
+}
 
 export function hasLlmCredentials(): boolean {
   return Boolean(config.anthropicApiKey);
