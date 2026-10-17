@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import { getReportById } from "@/lib/reportStore";
 import { getHeeboFont } from "@/lib/ogFont";
 import { toVisualOrder, wrapVisualLines } from "@/lib/bidiVisualText";
@@ -6,6 +8,9 @@ import type { Classification } from "@/lib/types";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+const logoData = await readFile(join(process.cwd(), "public/logo.png"), "base64");
+const logoSrc = `data:image/png;base64,${logoData}`;
 
 const CLASSIFICATION_COLOR: Record<Classification, string> = {
   מאומת: "#047857",
@@ -47,29 +52,9 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "9999px",
-              border: "3px solid #115e59",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 18,
-                height: 9,
-                borderLeft: "4px solid #115e59",
-                borderBottom: "4px solid #115e59",
-                transform: "rotate(-45deg)",
-                marginTop: -3,
-              }}
-            />
-          </div>
-          <div style={{ fontSize: 40, fontWeight: 700, color: "#1c1917" }}>{toVisualOrder("אמינות")}</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} width={48} height={48} />
+          <div style={{ fontSize: 40, fontWeight: 700, color: "#1c1917" }}>Facto</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -99,7 +84,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
 
         <div style={{ display: "flex", fontSize: 26, color: "#78716c" }}>
-          {toVisualOrder("בדיקת מהימנות מבוססת מקורות — אמינות")}
+          {toVisualOrder("בדיקת מהימנות מבוססת מקורות — Facto")}
         </div>
       </div>
     ),

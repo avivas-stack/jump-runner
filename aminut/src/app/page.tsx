@@ -21,8 +21,31 @@ import type { Report, VerifyRequest } from "@/lib/types";
 
 const STEPS = [
   { icon: "✍️", text: "מדביקים טענה, קישור או צילום מסך" },
-  { icon: "🔎", text: "אמינות בודקת מול מקורות אמיתיים ברשת" },
+  { icon: "🔎", text: "Facto בודק מול מקורות אמיתיים ברשת" },
   { icon: "📋", text: "מקבלים דוח ברור עם מקורות ורמת ביטחון" },
+];
+
+const BENEFITS = [
+  {
+    icon: "⏱️",
+    title: "לפני שמעבירים הלאה",
+    text: "קיבלתם משהו בוואטסאפ או בקבוצה? בדקו לפני שאתם משתפים אותו הלאה.",
+  },
+  {
+    icon: "🔗",
+    title: "לא ניחוש, מקורות",
+    text: "כל תשובה מגיעה עם קישורים למקורות אמיתיים, כדי שתוכלו לבדוק בעצמכם.",
+  },
+  {
+    icon: "🖼️",
+    title: "גם לתמונות",
+    text: "מזהה כשתמונה חשודה נוצרה או עובדה בעזרת AI.",
+  },
+  {
+    icon: "⚡",
+    title: "מהיר וחינמי",
+    text: "בדיקה לוקחת כדקה, בלי הרשמה ובלי עלות.",
+  },
 ];
 
 export default function Home() {
@@ -72,13 +95,9 @@ export default function Home() {
       <header className="mb-8 border-b-2 border-stone-900 pb-6 text-center">
         <p className="text-xs font-semibold tracking-[0.2em] text-stone-500 uppercase">כלי לבדיקת מהימנות</p>
         <div className="mt-1 flex items-center justify-center gap-2">
-          <span
-            aria-hidden
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-teal-800 text-lg text-teal-800"
-          >
-            ✓
-          </span>
-          <h1 className="font-serif text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">אמינות</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" aria-hidden className="h-9 w-9" />
+          <h1 className="font-serif text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">Facto</h1>
         </div>
         <p className="mt-2 text-sm text-stone-600">
           בודקים טענות, כותרות ושמועות מול מקורות אמיתיים — לפני שמאמינים.
@@ -122,6 +141,23 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      {showForm && (
+        <section className="mx-auto mb-8 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
+          {BENEFITS.map((benefit) => (
+            <div
+              key={benefit.title}
+              className="rounded-lg border border-stone-200 bg-white p-4 text-center shadow-sm"
+            >
+              <span aria-hidden className="text-xl">
+                {benefit.icon}
+              </span>
+              <h3 className="mt-1.5 text-sm font-semibold text-stone-900">{benefit.title}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">{benefit.text}</p>
+            </div>
+          ))}
+        </section>
+      )}
 
       {activeTab === "aiImage" ? (
         <div className="mx-auto max-w-2xl">
@@ -208,6 +244,10 @@ export default function Home() {
         <br />
         ייתכנו טעויות בבדיקה, ולכן יש להפעיל ביקורת ושיקול דעת.
         <br />
+        <Link href="/what-is-fake-news" className="underline hover:text-stone-600">
+          מה זה פייק ניוז?
+        </Link>
+        {" · "}
         <Link href="/privacy" className="underline hover:text-stone-600">
           מדיניות פרטיות ותנאי שימוש
         </Link>

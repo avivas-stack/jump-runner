@@ -3,4 +3,4 @@
  * absolute OG/Twitter image URLs. Update if a custom domain replaces this one.
  */
 export const SITE_URL = "https://aminut-il.vercel.app";
-export const SITE_NAME = "אמינות";
+export const SITE_NAME = "Facto";

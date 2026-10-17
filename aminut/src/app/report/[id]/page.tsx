@@ -78,7 +78,7 @@ function buildClaimReviewJsonLd(report: Report, shareUrl: string): string | null
     },
     author: {
       "@type": "Organization",
-      name: "אמינות",
+      name: SITE_NAME,
     },
     reviewRating: {
       "@type": "Rating",
@@ -133,8 +133,10 @@ export default function SharedReportPage({ params }: PageProps<"/report/[id]">) 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:py-12">
       <header className="mb-6 border-b-2 border-stone-900 pb-5 text-center">
-        <Link href="/" className="font-serif text-3xl font-bold text-stone-900 sm:text-4xl">
-          אמינות
+        <Link href="/" className="inline-flex items-center gap-2 font-serif text-3xl font-bold text-stone-900 sm:text-4xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" aria-hidden className="h-7 w-7 sm:h-8 sm:w-8" />
+          {SITE_NAME}
         </Link>
         <p className="mt-2 text-sm text-stone-600">דוח בדיקה משותף</p>
       </header>

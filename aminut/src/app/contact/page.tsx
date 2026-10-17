@@ -46,7 +46,9 @@ export default function ContactPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:py-12">
       <header className="mb-8 border-b-2 border-stone-900 pb-6 text-center">
-        <Link href="/" className="font-serif text-3xl font-bold text-stone-900 sm:text-4xl">
+        <Link href="/" className="inline-flex items-center gap-2 font-serif text-3xl font-bold text-stone-900 sm:text-4xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" aria-hidden className="h-7 w-7 sm:h-8 sm:w-8" />
           {SITE_NAME}
         </Link>
         <h1 className="mt-2 text-lg font-semibold text-stone-700">יצירת קשר</h1>

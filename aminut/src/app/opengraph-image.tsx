@@ -1,9 +1,14 @@
 import { ImageResponse } from "next/og";
+import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import { getHeeboFont } from "@/lib/ogFont";
-import { toVisualOrder, wrapVisualLines } from "@/lib/bidiVisualText";
+import { wrapVisualLines } from "@/lib/bidiVisualText";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+const logoData = await readFile(join(process.cwd(), "public/logo.png"), "base64");
+const logoSrc = `data:image/png;base64,${logoData}`;
 
 export default async function Image() {
   const [regular, bold] = await Promise.all([getHeeboFont(400), getHeeboFont(700)]);
@@ -31,29 +36,9 @@ export default async function Image() {
             paddingBottom: 28,
           }}
         >
-          <div
-            style={{
-              width: 70,
-              height: 70,
-              borderRadius: "9999px",
-              border: "5px solid #115e59",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 14,
-                borderLeft: "6px solid #115e59",
-                borderBottom: "6px solid #115e59",
-                transform: "rotate(-45deg)",
-                marginTop: -5,
-              }}
-            />
-          </div>
-          <div style={{ fontSize: 96, fontWeight: 700, color: "#1c1917" }}>{toVisualOrder("אמינות")}</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} width={80} height={80} />
+          <div style={{ fontSize: 96, fontWeight: 700, color: "#1c1917" }}>Facto</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 32 }}>
           {wrapVisualLines("בודקים טענות, כותרות ושמועות מול מקורות אמיתיים — לפני שמאמינים", 42).map((line, i) => (

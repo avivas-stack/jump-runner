@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { EvidenceItem, ExtractedClaim, Report } from "@/lib/types";
+import { SITE_NAME } from "@/lib/siteConfig";
 import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
 
 export function ClaimComparisonTable({ report }: { report: Report }) {
@@ -207,7 +208,7 @@ export function CopyShareLinkButton({ shareUrl }: { shareUrl: string }) {
 
 function buildPlainTextSummary(report: Report): string {
   const lines = [
-    `אמינות — סיכום בדיקה (${formatDate(report.checkedAt)})`,
+    `${SITE_NAME} — סיכום בדיקה (${formatDate(report.checkedAt)})`,
     "",
     report.overallAssessment,
     "",

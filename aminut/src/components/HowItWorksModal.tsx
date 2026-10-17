@@ -47,7 +47,7 @@ export function HowItWorksModal() {
       >
         <div className="max-h-[80vh] overflow-y-auto p-6" dir="rtl">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="font-serif text-lg font-bold text-stone-900">איך אמינות עובדת</h2>
+            <h2 className="font-serif text-lg font-bold text-stone-900">איך Facto עובד</h2>
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
@@ -60,7 +60,7 @@ export function HowItWorksModal() {
 
           <ol className="mt-3 space-y-2 text-sm text-stone-600">
             <li>1. מדביקים טענה, כותרת, קישור או צילום מסך.</li>
-            <li>2. אמינות מחלצת את הטענות העובדתיות ומחפשת עליהן מקורות אמיתיים ברשת.</li>
+            <li>2. Facto מחלץ את הטענות העובדתיות ומחפש עליהן מקורות אמיתיים ברשת.</li>
             <li>3. כל טענה מקבלת סיווג, הסבר, ורמת ביטחון — עם קישור לכל מקור.</li>
           </ol>
 
@@ -77,7 +77,7 @@ export function HowItWorksModal() {
           </ul>
 
           <p className="mt-5 text-xs text-stone-400">
-            אמינות היא כלי עזר לחשיבה ביקורתית ומתבססת על מקורות שנמצאו במועד הבדיקה. ייתכנו טעויות, ולכן יש להפעיל
+            Facto הוא כלי עזר לחשיבה ביקורתית ומתבסס על מקורות שנמצאו במועד הבדיקה. ייתכנו טעויות, ולכן יש להפעיל
             ביקורת ושיקול דעת משלכם.
           </p>
         </div>
