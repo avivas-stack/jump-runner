@@ -150,6 +150,16 @@ export const ExtractImageRequestSchema = z.object({
 });
 export type ExtractImageRequest = z.infer<typeof ExtractImageRequestSchema>;
 
+export const FeedbackCategorySchema = z.enum(["bug", "privacy", "other"]);
+export type FeedbackCategory = z.infer<typeof FeedbackCategorySchema>;
+
+export const FeedbackRequestSchema = z.object({
+  category: FeedbackCategorySchema,
+  message: z.string().trim().min(1).max(4000),
+  contactEmail: z.string().trim().max(200).optional(),
+});
+export type FeedbackRequest = z.infer<typeof FeedbackRequestSchema>;
+
 export const DetectAiImageRequestSchema = z.object({
   imageBase64: z.string().min(1).max(10_000_000),
   mediaType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),

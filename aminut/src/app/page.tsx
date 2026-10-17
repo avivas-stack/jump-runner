@@ -211,6 +211,10 @@ export default function Home() {
         <Link href="/privacy" className="underline hover:text-stone-600">
           מדיניות פרטיות ותנאי שימוש
         </Link>
+        {" · "}
+        <Link href="/contact" className="underline hover:text-stone-600">
+          יצירת קשר / דיווח על באג
+        </Link>
       </footer>
     </div>
   );

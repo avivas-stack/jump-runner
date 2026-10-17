@@ -79,20 +79,20 @@ export function Sidebar({
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-stone-900">דוגמאות לבדיקה</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <ul className="mt-3 space-y-2">
           {STATIC_EXAMPLE_CLAIMS.map((claim) => (
-            <button
-              key={claim}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelectExample(claim)}
-              title={claim}
-              className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-600 hover:bg-stone-100 disabled:opacity-50"
-            >
-              {claim.length > 40 ? `${claim.slice(0, 40)}…` : claim}
-            </button>
+            <li key={claim}>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onSelectExample(claim)}
+                className="w-full rounded-md border border-stone-200 bg-stone-50 p-3 text-start text-sm text-stone-700 hover:bg-stone-100 disabled:opacity-50"
+              >
+                {claim}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
     </aside>
   );
