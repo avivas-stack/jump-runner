@@ -42,7 +42,13 @@ export async function extractTextFromImage(
     model: config.extractionModel,
     system: SYSTEM_PROMPT,
     toolName: "extract_image_text",
-    maxTokens: 2000,
+    // A dense screenshot (a data-table infographic, a long WhatsApp thread, etc.) needs
+    // real headroom: measured a real-world case that needed ~2400-3050 output tokens and
+    // reliably hit the old 2000 ceiling, which silently truncates the tool call mid-JSON —
+    // Anthropic's API then returns an empty {} input, failing every "required" field at
+    // once rather than a clear "too long" error. 4096 leaves comfortable margin, and a
+    // short/simple image still completes in a few hundred tokens regardless of the ceiling.
+    maxTokens: 4096,
     schema: ImageExtractionSchema,
     prompt: [
       { type: "image", source: { type: "base64", media_type: mediaType, data: base64Data } },

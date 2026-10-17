@@ -35,4 +35,13 @@ describe("extractTextFromImage", () => {
     expect(result.uncertainNotes.length).toBeGreaterThan(0);
     expect(result.extractedText).toContain("[לא קריא]");
   });
+
+  it("gives transcription real headroom (not the old 2000-token ceiling), since a dense infographic/table measurably needs 2400-3050+ output tokens and silently returns an empty {} input when truncated", async () => {
+    callStructuredMock.mockResolvedValueOnce({ extractedText: "x", confidence: "high", uncertainNotes: [] });
+
+    await extractTextFromImage("base64data", "image/jpeg");
+
+    const call = callStructuredMock.mock.calls[0][0];
+    expect(call.maxTokens).toBeGreaterThanOrEqual(4096);
+  });
 });
