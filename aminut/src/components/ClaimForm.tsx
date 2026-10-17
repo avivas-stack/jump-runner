@@ -1,9 +1,9 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { KnownError, MAX_CLIENT_IMAGE_BYTES, compressImageUntilUnderLimit, fileToBase64 } from "@/lib/clientImageUpload";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_IMAGE_BYTES = 5_000_000;
 
 const CONFIDENCE_LABEL: Record<string, string> = {
   high: "זוהה בבירור",
@@ -52,29 +52,37 @@ export function ClaimForm({
       setImageStatus("error");
       return;
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setImageError(`התמונה גדולה מדי (מגבלה: ${Math.floor(MAX_IMAGE_BYTES / 1_000_000)}MB).`);
-      setImageStatus("error");
-      return;
-    }
 
     setImageStatus("loading");
     try {
-      const base64 = await fileToBase64(file);
+      // Phones routinely produce photos/screenshots over the limit (especially shared
+      // in from another app) — shrink those client-side instead of just refusing them.
+      let blobToUpload: Blob = file;
+      let mediaType: string = file.type;
+      if (file.size > MAX_CLIENT_IMAGE_BYTES) {
+        blobToUpload = await compressImageUntilUnderLimit(file);
+        mediaType = blobToUpload.type;
+      }
+
+      const base64 = await fileToBase64(blobToUpload);
       const res = await fetch("/api/extract-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
+        body: JSON.stringify({ imageBase64: base64, mediaType }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error ?? "שגיאה בזיהוי טקסט מהתמונה");
+        throw new KnownError(data.error ?? "שגיאה בזיהוי טקסט מהתמונה");
       }
       onTextChange(text.trim() ? `${text.trim()}\n\n${data.extractedText}` : data.extractedText);
       setImageNote({ confidence: data.confidence, notes: data.uncertainNotes ?? [] });
       setImageStatus("idle");
     } catch (err) {
-      setImageError(err instanceof Error ? err.message : "שגיאה לא צפויה בעיבוד התמונה");
+      // Never leak a raw browser/runtime exception to the user — only a KnownError
+      // carries a message we wrote ourselves and know is clear Hebrew.
+      console.error("Image text extraction failed:", err);
+      const message = err instanceof KnownError ? err.message : "שגיאה לא צפויה בעיבוד התמונה. נסו שוב, או עם תמונה אחרת.";
+      setImageError(message);
       setImageStatus("error");
     }
   };
@@ -142,9 +150,12 @@ export function ClaimForm({
         >
           {imageStatus === "loading"
             ? "מזהה טקסט בתמונה..."
-            : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP, עד 5MB) — הטקסט שיזוהה יתווסף לתיבה למעלה לבדיקה ועריכה"}
+            : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP) — הטקסט שיזוהה יתווסף לתיבה למעלה לבדיקה ועריכה"}
         </button>
         {imageError && <p className="mt-1 text-xs text-rose-600">{imageError}</p>}
+        <p className="mt-1 text-xs text-stone-400">
+          התמונה נשלחת לשירות ה-AI של Anthropic (Claude) לזיהוי הטקסט שבה בלבד, ואינה נשמרת באתר.
+        </p>
       </div>
 
       <button
@@ -158,15 +169,3 @@ export function ClaimForm({
   );
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // "data:image/png;base64,AAAA..." -> keep only the base64 payload
-      resolve(result.slice(result.indexOf(",") + 1));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("קריאת הקובץ נכשלה"));
-    reader.readAsDataURL(file);
-  });
-}

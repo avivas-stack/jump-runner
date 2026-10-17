@@ -2,12 +2,9 @@
 
 import { ChangeEvent, useRef, useState } from "react";
 import type { DetectAiImageResult } from "@/lib/types";
+import { KnownError, MAX_CLIENT_IMAGE_BYTES, compressImageUntilUnderLimit, fileToBase64 } from "@/lib/clientImageUpload";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_IMAGE_BYTES = 5_000_000;
-
-/** An error whose message is our own clear Hebrew text, safe to show the user as-is. */
-class KnownError extends Error {}
 
 const OPINION_LABEL: Record<"yes" | "no" | "unsure", string> = {
   yes: "נראית כמו תמונה שנוצרה או עובדה על ידי AI",
@@ -89,8 +86,8 @@ export function AiImageDetector() {
       // refusing them, rather than forcing the person to go find a smaller copy.
       let blobToUpload: Blob = file;
       let mediaType: string = file.type;
-      if (file.size > MAX_IMAGE_BYTES) {
-        blobToUpload = await compressUntilUnderLimit(file);
+      if (file.size > MAX_CLIENT_IMAGE_BYTES) {
+        blobToUpload = await compressImageUntilUnderLimit(file);
         mediaType = blobToUpload.type;
         setWasCompressed(true);
       }
@@ -128,6 +125,10 @@ export function AiImageDetector() {
           <span dir="ltr">SynthID</span>) שנמצאים במטא-דאטה של הקובץ עצמו, וחוות דעת חזותית זהירה
           של מודל AI — הן על פגמים חזותיים טיפוסיים (עור חלק מדי, ידיים מעוותות) והן על כך שהמצב
           המתואר בתמונה הגיוני במציאות. שני אלה אינם זיהוי פורנזי וודאי — ראה הסתייגות למטה.
+        </p>
+        <p className="mt-2 text-xs text-stone-400">
+          התמונה שתעלה/י נשלחת לשירות ה-AI של Anthropic (Claude) לצורך הניתוח בלבד, ואינה נשמרת
+          באתר או במסד הנתונים שלנו.
         </p>
       </div>
 
@@ -235,78 +236,3 @@ export function AiImageDetector() {
   );
 }
 
-function fileToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.slice(result.indexOf(",") + 1));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("קריאת הקובץ נכשלה"));
-    reader.readAsDataURL(blob);
-  });
-}
-
-function loadImageElement(file: Blob): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new KnownError("לא ניתן היה לפתוח את התמונה בדפדפן. נסו תמונה אחרת."));
-    };
-    img.src = objectUrl;
-  });
-}
-
-function downscaleToJpeg(img: HTMLImageElement, maxDimension: number, quality: number): Promise<Blob> {
-  const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
-  const width = Math.max(1, Math.round(img.naturalWidth * scale));
-  const height = Math.max(1, Math.round(img.naturalHeight * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return Promise.reject(new KnownError("לא ניתן היה לעבד את התמונה בדפדפן זה. נסו תמונה קטנה יותר."));
-  }
-  ctx.drawImage(img, 0, 0, width, height);
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new KnownError("לא ניתן היה לדחוס את התמונה. נסו תמונה אחרת."))),
-      "image/jpeg",
-      quality
-    );
-  });
-}
-
-/**
- * Shrinks an over-the-limit image until it fits, instead of just refusing it — phones
- * routinely produce photos/screenshots over 5MB, especially when shared in from another
- * app. Tries progressively smaller dimensions/quality; gives up with a clear message
- * only if even the smallest attempt still doesn't fit.
- *
- * Trade-off: re-encoding through canvas strips any original file metadata, so the
- * metadata-provenance check below only ever reflects the original file when it was
- * already under the limit and sent as-is.
- */
-async function compressUntilUnderLimit(file: File): Promise<Blob> {
-  const img = await loadImageElement(file);
-  const attempts: [number, number][] = [
-    [1600, 0.85],
-    [1200, 0.75],
-    [900, 0.65],
-  ];
-  let lastBlob: Blob | null = null;
-  for (const [maxDimension, quality] of attempts) {
-    lastBlob = await downscaleToJpeg(img, maxDimension, quality);
-    if (lastBlob.size <= MAX_IMAGE_BYTES) return lastBlob;
-  }
-  throw new KnownError(
-    `התמונה גדולה מדי גם אחרי דחיסה (מגבלה: ${Math.floor(MAX_IMAGE_BYTES / 1_000_000)}MB). נסו תמונה קטנה יותר או צילום מסך ממוקד יותר.`
-  );
-}

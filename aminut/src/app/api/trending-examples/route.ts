@@ -1,6 +1,18 @@
+import { NextRequest } from "next/server";
+import { checkRateLimit, clientKeyFromRequest } from "@/lib/rateLimit";
 import { getTrendingExamples } from "@/lib/trendingExamples";
 
-export async function GET() {
+// Generous relative to the other routes — this endpoint takes no user input and is
+// normally called once per page load — but still bounded, not left wide open.
+const TRENDING_EXAMPLES_RATE_LIMIT_PER_HOUR = 60;
+
+export async function GET(request: NextRequest) {
+  const clientKey = clientKeyFromRequest(request);
+  const rate = checkRateLimit(`trending:${clientKey}`, TRENDING_EXAMPLES_RATE_LIMIT_PER_HOUR);
+  if (!rate.allowed) {
+    return Response.json({ examples: [] }, { status: 429, headers: { "Cache-Control": "no-store" } });
+  }
+
   const examples = await getTrendingExamples();
   // No HTTP-level caching here: the server already caches the underlying work for
   // 24h in-memory (trendingExamples.ts). A long browser Cache-Control would risk a

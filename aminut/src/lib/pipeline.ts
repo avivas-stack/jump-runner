@@ -133,7 +133,10 @@ export async function runVerifyPipeline(
           if (r === 0) {
             const page = await retrievePageText(result.url);
             if (page.accessible && page.text) {
-              excerpt = page.text.slice(0, 1500);
+              // A short snippet, not a substantial reproduction of the article — this
+              // text is persisted indefinitely in a publicly shareable report, so it
+              // needs to stay snippet-sized for copyright reasons, not just display tidiness.
+              excerpt = page.text.slice(0, 600);
               title = page.title ?? result.title;
             }
           }

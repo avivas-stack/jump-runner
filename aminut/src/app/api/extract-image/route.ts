@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
     const result = await extractTextFromImage(parsed.data.imageBase64, parsed.data.mediaType);
     return Response.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "שגיאה לא צפויה בעיבוד התמונה";
-    return Response.json({ error: message }, { status: 502 });
+    // Log the real (vendor) error server-side only — forwarding it verbatim to an
+    // anonymous client is unnecessary implementation disclosure.
+    console.error("extractTextFromImage failed:", err);
+    return Response.json({ error: "שגיאה לא צפויה בעיבוד התמונה. נסו שוב." }, { status: 502 });
   }
 }

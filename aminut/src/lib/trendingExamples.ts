@@ -150,21 +150,34 @@ async function fetchFresh(): Promise<TrendingExample[]> {
  * finding nothing claim-shaped — returns an empty array, and the caller falls back
  * to its own static examples. Never throws, never blocks page load.
  */
+let inFlight: Promise<TrendingExample[]> | null = null;
+
 /** Test-only escape hatch: clears the in-memory cache between test cases. */
 export function _resetCacheForTests(): void {
   cache = null;
+  inFlight = null;
 }
 
 export async function getTrendingExamples(): Promise<TrendingExample[]> {
   if (cache && Date.now() - cache.fetchedAt < CACHE_TTL_MS) {
     return cache.examples;
   }
-  try {
-    const examples = await fetchFresh();
-    cache = { examples, fetchedAt: Date.now() };
-    return examples;
-  } catch (err) {
-    console.error("getTrendingExamples failed:", err instanceof Error ? err.message : err);
-    return cache?.examples ?? [];
-  }
+  // A burst of requests arriving right as the cache expires would otherwise each
+  // kick off their own fetchFresh() (a "cache stampede") — duplicate scraping and
+  // model calls for what should be a single refresh. Concurrent callers within this
+  // instance now await the same in-flight refresh instead.
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    try {
+      const examples = await fetchFresh();
+      cache = { examples, fetchedAt: Date.now() };
+      return examples;
+    } catch (err) {
+      console.error("getTrendingExamples failed:", err instanceof Error ? err.message : err);
+      return cache?.examples ?? [];
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
 }

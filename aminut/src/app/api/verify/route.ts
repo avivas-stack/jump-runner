@@ -6,6 +6,12 @@ import { saveReport } from "@/lib/reportStore";
 import { hasReportStorage } from "@/lib/config";
 import { VerifyRequestSchema, StageEvent } from "@/lib/types";
 
+// A multi-claim report runs several claims through claim extraction, up to 2 searches
+// each, a full-page fetch, and an evaluation call — all sequentially. 120s gives that
+// realistic headroom without relying on the platform's own (higher, but unstated-in-code)
+// default.
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   const clientKey = clientKeyFromRequest(request);
   const rate = checkRateLimit(clientKey, config.rateLimitPerIpPerHour);
@@ -46,10 +52,14 @@ export async function POST(request: NextRequest) {
         emit({ type: "done", report, shareUrl: hasReportStorage() ? `/report/${report.id}` : null });
       } catch (err) {
         if (err instanceof PipelineError) {
+          // PipelineError messages are always our own, written for the end user.
           emit({ type: "error", message: err.message, code: err.code });
         } else {
-          const message = err instanceof Error ? err.message : "שגיאה לא צפויה בעת הבדיקה";
-          emit({ type: "error", message, code: "unexpected" });
+          // Anything else is an unexpected failure from a dependency (Anthropic, Tavily,
+          // etc.) — its message is implementation detail for us, not the user, so log it
+          // and send a generic one instead of forwarding vendor error text verbatim.
+          console.error("verify pipeline failed unexpectedly:", err);
+          emit({ type: "error", message: "שגיאה לא צפויה בעת הבדיקה. נסו שוב.", code: "unexpected" });
         }
       } finally {
         streamClosed = true;
