@@ -15,6 +15,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
     "@supabase/supabase-js": "^2.117.3",
+    "bidi-js": "^1.1.0",
     "cheerio": "^1.2.0",
     "next": "16.4.1",
     "react": "19.3.0",

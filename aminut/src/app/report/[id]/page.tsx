@@ -1,13 +1,40 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 import Link from "next/link";
-import { getReportById } from "@/lib/reportStore";
+import { getReportById as getReportByIdUncached } from "@/lib/reportStore";
 import { ReportView } from "@/components/ReportView";
+import { SITE_NAME } from "@/lib/siteConfig";
 import type { Classification, Report } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "דוח בדיקת מהימנות — אמינות",
-};
+// Shared between generateMetadata and the page body so a single request only ever
+// fetches the report once (React's per-request cache, not a cross-request cache).
+const getReportById = cache(getReportByIdUncached);
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+export async function generateMetadata({ params }: PageProps<"/report/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const report = await getReportById(id);
+  if (!report) {
+    return { title: `דוח לא נמצא — ${SITE_NAME}` };
+  }
+
+  const singleClaim = report.claims.length === 1 ? report.claims[0] : null;
+  const singleEvaluation = singleClaim ? report.evaluations.find((e) => e.claimId === singleClaim.id) : null;
+  const title = singleClaim
+    ? `${singleEvaluation?.classification ?? "בדיקה"}: ${truncate(singleClaim.originalText, 70)} — ${SITE_NAME}`
+    : `דוח בדיקת מהימנות — ${SITE_NAME}`;
+  const description = truncate(report.overallAssessment, 200);
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { title, description },
+  };
+}
 
 /**
  * Rating scale for the ClaimReview structured data below (1 = false, 5 = verified).
@@ -31,6 +58,12 @@ function buildClaimReviewJsonLd(report: Report, shareUrl: string): string | null
   const claim = report.claims[0];
   const evaluation = report.evaluations.find((e) => e.claimId === claim.id);
   if (!evaluation) return null;
+  // A low-confidence verdict is, by definition, one this tool itself isn't sure of —
+  // never hand it to a crawler as a confident structured "True"/"False" claim about a
+  // real, possibly identifiable person. The hedging that already exists in the HTML
+  // (ConfidenceNote, the "ייתכנו טעויות" disclaimers) isn't read by anything parsing
+  // this JSON-LD, so the guard has to live here too.
+  if (evaluation.confidence === "low") return null;
 
   // Escape "</" so claim text can never prematurely close the <script> tag it's embedded in.
   return JSON.stringify({
