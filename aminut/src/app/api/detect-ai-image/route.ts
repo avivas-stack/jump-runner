@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { checkRateLimit, clientKeyFromRequest } from "@/lib/rateLimit";
-import { config, hasLlmCredentials } from "@/lib/config";
+import { config, hasLlmCredentials, paidEndpointsDisabledResponse } from "@/lib/config";
 import { getVisualAiOpinion, scanForProvenanceMarkers } from "@/lib/aiImageDetection";
 import { DetectAiImageRequestSchema } from "@/lib/types";
 
@@ -11,6 +11,9 @@ import { DetectAiImageRequestSchema } from "@/lib/types";
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
+  const maintenance = paidEndpointsDisabledResponse();
+  if (maintenance) return maintenance;
+
   const clientKey = clientKeyFromRequest(request);
   const rate = checkRateLimit(`aiimg:${clientKey}`, config.imageRateLimitPerIpPerHour);
   if (!rate.allowed) {

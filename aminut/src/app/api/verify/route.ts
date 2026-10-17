@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { checkRateLimit, clientKeyFromRequest } from "@/lib/rateLimit";
-import { config } from "@/lib/config";
+import { config, paidEndpointsDisabledResponse } from "@/lib/config";
 import { runVerifyPipeline, PipelineError } from "@/lib/pipeline";
 import { saveReport } from "@/lib/reportStore";
 import { hasReportStorage } from "@/lib/config";
@@ -13,6 +13,9 @@ import { VerifyRequestSchema, StageEvent } from "@/lib/types";
 export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
+  const maintenance = paidEndpointsDisabledResponse();
+  if (maintenance) return maintenance;
+
   const clientKey = clientKeyFromRequest(request);
   const rate = checkRateLimit(clientKey, config.rateLimitPerIpPerHour);
   if (!rate.allowed) {

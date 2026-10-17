@@ -1,10 +1,13 @@
 import { NextRequest } from "next/server";
 import { checkRateLimit, clientKeyFromRequest } from "@/lib/rateLimit";
-import { config, hasLlmCredentials } from "@/lib/config";
+import { config, hasLlmCredentials, paidEndpointsDisabledResponse } from "@/lib/config";
 import { extractTextFromImage } from "@/lib/imageExtraction";
 import { ExtractImageRequestSchema } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
+  const maintenance = paidEndpointsDisabledResponse();
+  if (maintenance) return maintenance;
+
   const clientKey = clientKeyFromRequest(request);
   const rate = checkRateLimit(`image:${clientKey}`, config.imageRateLimitPerIpPerHour);
   if (!rate.allowed) {

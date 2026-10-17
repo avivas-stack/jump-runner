@@ -22,6 +22,15 @@ const EnvSchema = z.object({
   RATE_LIMIT_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(20),
   IMAGE_RATE_LIMIT_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(10),
   MAX_IMAGE_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  // Emergency brake for a viral-traffic cost spike: rate limiting here is in-memory and
+  // per-serverless-instance (not a durable/global store), so it can't actually cap total
+  // spend under real concurrent load across many instances. Setting this lets whoever
+  // holds the Vercel project flip the paid endpoints off (a 503, not a crash) without
+  // writing or shipping any code, as a stopgap until a durable global limiter is in place.
+  DISABLE_PAID_ENDPOINTS: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
 });
 
 function loadEnv() {
@@ -52,6 +61,7 @@ export const config = {
   rateLimitPerIpPerHour: env.RATE_LIMIT_PER_IP_PER_HOUR,
   imageRateLimitPerIpPerHour: env.IMAGE_RATE_LIMIT_PER_IP_PER_HOUR,
   maxImageBytes: env.MAX_IMAGE_BYTES,
+  disablePaidEndpoints: env.DISABLE_PAID_ENDPOINTS,
 };
 
 export function hasLlmCredentials(): boolean {
@@ -64,4 +74,14 @@ export function hasSearchCredentials(): boolean {
 
 export function hasReportStorage(): boolean {
   return Boolean(config.supabaseUrl && config.supabaseAnonKey);
+}
+
+/**
+ * Checked first thing by every route that triggers paid API calls (Anthropic, Tavily).
+ * Returns a ready-to-send 503 when DISABLE_PAID_ENDPOINTS is set, null otherwise — see
+ * that env var's comment above for why this exists.
+ */
+export function paidEndpointsDisabledResponse(): Response | null {
+  if (!config.disablePaidEndpoints) return null;
+  return Response.json({ error: "השירות מושבת זמנית לתחזוקה. נסו שוב בקרוב." }, { status: 503 });
 }
