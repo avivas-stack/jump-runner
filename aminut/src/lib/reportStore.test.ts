@@ -8,13 +8,11 @@ const configMock = vi.hoisted(() => ({
 vi.mock("./config", () => configMock);
 
 const insertMock = vi.hoisted(() => vi.fn());
-const maybeSingleMock = vi.hoisted(() => vi.fn());
+const rpcMock = vi.hoisted(() => vi.fn());
 const createClientMock = vi.hoisted(() =>
   vi.fn(() => ({
-    from: vi.fn(() => ({
-      insert: insertMock,
-      select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: maybeSingleMock })) })),
-    })),
+    from: vi.fn(() => ({ insert: insertMock })),
+    rpc: rpcMock,
   }))
 );
 vi.mock("@supabase/supabase-js", () => ({ createClient: createClientMock }));
@@ -39,7 +37,7 @@ const report: Report = {
 
 beforeEach(() => {
   insertMock.mockReset().mockResolvedValue({ error: null });
-  maybeSingleMock.mockReset();
+  rpcMock.mockReset();
   createClientMock.mockClear();
   configMock.hasReportStorage.mockReturnValue(false);
   configMock.config.supabaseUrl = undefined;
@@ -80,16 +78,17 @@ describe("getReportById", () => {
     configMock.hasReportStorage.mockReturnValue(true);
     configMock.config.supabaseUrl = "https://x.supabase.co";
     configMock.config.supabaseAnonKey = "anon-key";
-    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+    rpcMock.mockResolvedValue({ data: null, error: null });
 
     expect(await getReportById("missing")).toBeNull();
+    expect(rpcMock).toHaveBeenCalledWith("get_report_by_id", { p_id: "missing" });
   });
 
   it("returns null (never a half-valid report) when the stored JSON fails schema validation", async () => {
     configMock.hasReportStorage.mockReturnValue(true);
     configMock.config.supabaseUrl = "https://x.supabase.co";
     configMock.config.supabaseAnonKey = "anon-key";
-    maybeSingleMock.mockResolvedValue({ data: { report: { not: "a valid report" } }, error: null });
+    rpcMock.mockResolvedValue({ data: { not: "a valid report" }, error: null });
 
     expect(await getReportById("r1")).toBeNull();
   });
@@ -98,7 +97,7 @@ describe("getReportById", () => {
     configMock.hasReportStorage.mockReturnValue(true);
     configMock.config.supabaseUrl = "https://x.supabase.co";
     configMock.config.supabaseAnonKey = "anon-key";
-    maybeSingleMock.mockResolvedValue({ data: { report }, error: null });
+    rpcMock.mockResolvedValue({ data: report, error: null });
 
     expect(await getReportById("r1")).toEqual(report);
   });

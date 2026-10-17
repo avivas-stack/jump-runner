@@ -13,7 +13,16 @@ interface ReportsDatabase {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      // A SECURITY DEFINER RPC, not a direct table select — see the
+      // scope_report_reads_to_single_id_rpc migration for why: it returns only the one
+      // row matching p_id, so the anon role never has standing `select *` access to the
+      // whole table even if its key leaked.
+      get_report_by_id: {
+        Args: { p_id: string };
+        Returns: Report | null;
+      };
+    };
   };
 }
 
@@ -50,8 +59,8 @@ export async function saveReport(report: Report): Promise<void> {
 
 export async function getReportById(id: string): Promise<Report | null> {
   if (!hasReportStorage()) return null;
-  const { data, error } = await getClient().from("reports").select("report").eq("id", id).maybeSingle();
+  const { data, error } = await getClient().rpc("get_report_by_id", { p_id: id });
   if (error || !data) return null;
-  const parsed = ReportSchema.safeParse(data.report);
+  const parsed = ReportSchema.safeParse(data);
   return parsed.success ? parsed.data : null;
 }
