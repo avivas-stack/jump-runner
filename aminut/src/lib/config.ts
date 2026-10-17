@@ -37,6 +37,11 @@ const EnvSchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "true" || v === "1"),
+  // Optional: when set, a new feedback/bug-report submission also sends an email
+  // notification via Resend. Without it, feedback is still saved to Supabase — it's
+  // just not actively surfaced anywhere.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  FEEDBACK_NOTIFICATION_EMAIL: z.string().min(1).optional(),
 });
 
 function loadEnv() {
@@ -70,6 +75,8 @@ export const config = {
   disablePaidEndpoints: env.DISABLE_PAID_ENDPOINTS,
   upstashRedisRestUrl: env.UPSTASH_REDIS_REST_URL,
   upstashRedisRestToken: env.UPSTASH_REDIS_REST_TOKEN,
+  resendApiKey: env.RESEND_API_KEY,
+  feedbackNotificationEmail: env.FEEDBACK_NOTIFICATION_EMAIL,
 };
 
 export function hasDurableRateLimitStore(): boolean {
@@ -86,6 +93,10 @@ export function hasSearchCredentials(): boolean {
 
 export function hasReportStorage(): boolean {
   return Boolean(config.supabaseUrl && config.supabaseAnonKey);
+}
+
+export function hasFeedbackNotifications(): boolean {
+  return Boolean(config.resendApiKey && config.feedbackNotificationEmail);
 }
 
 /**
