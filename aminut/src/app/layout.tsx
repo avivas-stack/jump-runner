@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Assistant } from "next/font/google";
 import "./globals.css";
 import { SITE_NAME, SITE_URL } from "@/lib/siteConfig";
+import { AccessibilityWidget, A11Y_INLINE_BOOTSTRAP_SCRIPT } from "@/components/AccessibilityWidget";
+import { LanguageProvider, LANGUAGE_INLINE_BOOTSTRAP_SCRIPT } from "@/lib/i18n/LanguageContext";
 
 // Assistant: a Hebrew/Latin sans designed in the same clean, neutral "system UI" spirit
 // as Segoe UI — the fallback for every visitor not on Windows (Segoe UI itself isn't a
@@ -35,8 +37,27 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="he" dir="rtl" className={`${assistant.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900">{children}</body>
+    <html
+      lang="he"
+      dir="rtl"
+      // The language-toggle bootstrap script (below) may flip lang/dir before hydration
+      // based on a returning visitor's saved preference — an intentional mismatch with
+      // this static markup, not a bug, so React shouldn't warn about or fight it.
+      suppressHydrationWarning
+      className={`${assistant.variable} h-full antialiased`}
+    >
+      <head>
+        {/* Applies any saved accessibility/language prefs before paint, so a returning
+            visitor never sees a flash of the unstyled/wrong-direction default. */}
+        <script dangerouslySetInnerHTML={{ __html: A11Y_INLINE_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INLINE_BOOTSTRAP_SCRIPT }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900">
+        <LanguageProvider>
+          {children}
+          <AccessibilityWidget />
+        </LanguageProvider>
+      </body>
     </html>
   );
 }

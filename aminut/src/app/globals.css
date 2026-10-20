@@ -22,3 +22,38 @@ body {
   color: var(--foreground);
   font-family: var(--font-segoe);
 }
+
+/* Accessibility widget overrides (src/components/AccessibilityWidget.tsx) — broad,
+   !important-based selectors are intentional here: a brute-force visual override is the
+   only way an accessibility toggle can reliably reach every component without each one
+   opting in individually. */
+html.a11y-grayscale {
+  filter: grayscale(1);
+}
+
+html.a11y-contrast body,
+html.a11y-contrast body :not(svg):not(path):not(circle) {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #6b7280 !important;
+}
+html.a11y-contrast a {
+  color: #facc15 !important;
+}
+html.a11y-contrast img {
+  filter: grayscale(0.4) contrast(1.1);
+}
+
+html.a11y-underline-links a {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+html.a11y-no-motion *,
+html.a11y-no-motion *::before,
+html.a11y-no-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
