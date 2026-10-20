@@ -15,7 +15,7 @@ const EnvSchema = z.object({
   EXTRACTION_MODEL: z.string().default("claude-haiku-5-5"),
   EVALUATION_MODEL: z.string().default("claude-sonnet-5-5"),
   MAX_SEARCHES_PER_ANALYSIS: z.coerce.number().int().positive().default(8),
-  MAX_CLAIMS_PER_ANALYSIS: z.coerce.number().int().positive().default(5),
+  MAX_CLAIMS_PER_ANALYSIS: z.coerce.number().int().positive().default(4),
   MAX_RESULTS_PER_SEARCH: z.coerce.number().int().positive().default(5),
   MAX_PAGE_FETCH_BYTES: z.coerce.number().int().positive().default(1_500_000),
   FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
