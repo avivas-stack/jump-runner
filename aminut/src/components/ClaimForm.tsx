@@ -134,6 +134,10 @@ export function ClaimForm({
         <span className="mb-1 block text-sm font-medium text-stone-700">{t.imageUploadLabel}</span>
         <input
           ref={fileInputRef}
+          // Targeted by name from browser-extension/content-handoff.js to hand off an
+          // image captured via the extension's right-click-image flow — keep this id
+          // stable if this input ever moves or gets wrapped.
+          id="facto-claim-image-input"
           type="file"
           accept={ACCEPTED_IMAGE_TYPES.join(",")}
           onChange={handleImageSelect}
