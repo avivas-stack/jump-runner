@@ -117,7 +117,7 @@ test("mobile viewport renders the form without horizontal overflow", async ({ pa
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "אמינות" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Facto" })).toBeVisible();
   await expect(page.getByRole("button", { name: "בדוק אמינות" })).toBeVisible();
 
   const hasHorizontalOverflow = await page.evaluate(
