@@ -4,6 +4,13 @@ import { config, hasLlmCredentials, paidEndpointsDisabledResponse } from "@/lib/
 import { extractTextFromImage } from "@/lib/imageExtraction";
 import { ExtractImageRequestSchema } from "@/lib/types";
 
+// A dense screenshot can legitimately need close to the full 4096-token response (see
+// imageExtraction.ts) — vision analysis plus that much generation can run past Vercel's
+// short default function timeout, surfacing as this route's generic "processing error"
+// for exactly the kind of image most worth checking. Matches detect-ai-image's own
+// maxDuration for the same reason.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const maintenance = paidEndpointsDisabledResponse();
   if (maintenance) return maintenance;
