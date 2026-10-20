@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const STATIC_EXAMPLE_CLAIMS = [
-  'שר האוצר בישראל הודיע אתמול כי שיעור המע"מ יועלה ל-20% החל מינואר הקרוב',
-  "פוסט ברשתות החברתיות טוען שחברת תרופות גדולה הודתה כי חיסון נפוץ גורם לאוטיזם",
-  "כותרת חדשות: ישראל דורגה במקום הראשון בעולם במספר הסטארטאפים לנפש ב-2025",
-];
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 interface ViralExample {
   claim: string;
@@ -21,6 +16,7 @@ export function Sidebar({
   onSelectExample: (text: string) => void;
   disabled: boolean;
 }) {
+  const t = useTranslation("sidebar");
   const [viral, setViral] = useState<ViralExample[]>([]);
 
   useEffect(() => {
@@ -43,11 +39,11 @@ export function Sidebar({
     <aside className="space-y-6 lg:w-80 lg:shrink-0">
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-          <span aria-hidden>🔥</span> פייק ויראלי
+          <span aria-hidden>🔥</span> {t.viralTitle}
         </h2>
-        <p className="mt-1 text-xs text-stone-500">טענות שעולות עכשיו ברשת, לפי בודקי עובדות ישראליים</p>
+        <p className="mt-1 text-xs text-stone-500">{t.viralSubtitle}</p>
         {viral.length === 0 ? (
-          <p className="mt-3 text-xs text-stone-400">אין כרגע טענות ויראליות זמינות — נסו את הדוגמאות למטה.</p>
+          <p className="mt-3 text-xs text-stone-600">{t.noViralExamples}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {viral.map((item, i) => (
@@ -58,9 +54,9 @@ export function Sidebar({
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="text-xs text-stone-400 underline-offset-2 hover:underline"
+                    className="text-xs text-stone-600 underline-offset-2 hover:underline"
                   >
-                    מקור: {item.sourceName}
+                    {t.sourcePrefix}{item.sourceName}
                   </a>
                   <button
                     type="button"
@@ -68,7 +64,7 @@ export function Sidebar({
                     onClick={() => onSelectExample(item.claim)}
                     className="shrink-0 rounded-full bg-teal-700 px-3 py-1 text-xs font-medium text-white hover:bg-teal-800 disabled:opacity-50"
                   >
-                    בדוק את זה
+                    {t.checkThisButton}
                   </button>
                 </div>
               </li>
@@ -78,9 +74,9 @@ export function Sidebar({
       </section>
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-stone-900">דוגמאות לבדיקה</h2>
+        <h2 className="text-sm font-semibold text-stone-900">{t.examplesTitle}</h2>
         <ul className="mt-3 space-y-2">
-          {STATIC_EXAMPLE_CLAIMS.map((claim) => (
+          {t.staticExampleClaims.map((claim) => (
             <li key={claim}>
               <button
                 type="button"

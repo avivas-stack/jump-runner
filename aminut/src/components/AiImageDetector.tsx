@@ -126,7 +126,7 @@ export function AiImageDetector() {
           של מודל AI — הן על פגמים חזותיים טיפוסיים (עור חלק מדי, ידיים מעוותות) והן על כך שהמצב
           המתואר בתמונה הגיוני במציאות. שני אלה אינם זיהוי פורנזי וודאי — ראה הסתייגות למטה.
         </p>
-        <p className="mt-2 text-xs text-stone-400">
+        <p className="mt-2 text-xs text-stone-600">
           התמונה שתעלה/י נשלחת לשירות ה-AI של Anthropic (Claude) לצורך הניתוח בלבד, ואינה נשמרת
           באתר או במסד הנתונים שלנו.
         </p>
@@ -170,7 +170,7 @@ export function AiImageDetector() {
           </div>
 
           {wasCompressed && (
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-stone-600">
               התמונה הייתה גדולה מהמגבלה וכווצה אוטומטית לפני הבדיקה — בדיקת סימני המקור במטא-דאטה
               למטה מתייחסת לעותק המכווץ, לא לקובץ המקורי.
             </p>
@@ -217,7 +217,7 @@ export function AiImageDetector() {
             </div>
           )}
 
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-600">
             הערה: <span dir="ltr">SynthID</span> הוא סימן מים קריפטוגרפי בלתי נראה; פענוח אמין שלו
             דורש את הכלי הייעודי של גוגל, שאינו זמין כשירות API ציבורי. הכלי הזה בודק רק סימני
             מקור גלויים בקובץ וחוות דעת חזותית — לא פענוח ישיר של סימן המים.

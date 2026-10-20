@@ -2,14 +2,9 @@
 
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import { KnownError, MAX_CLIENT_IMAGE_BYTES, compressImageUntilUnderLimit, fileToBase64 } from "@/lib/clientImageUpload";
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-const CONFIDENCE_LABEL: Record<string, string> = {
-  high: "זוהה בבירור",
-  medium: "זוהה ברובו, כדאי לבדוק",
-  low: "קושי בזיהוי — יש לבדוק ולתקן",
-};
 
 export function ClaimForm({
   text,
@@ -26,6 +21,7 @@ export function ClaimForm({
   disabled: boolean;
   onSubmit: (input: { text?: string; url?: string }) => void;
 }) {
+  const t = useTranslation("claimForm");
   const [imageStatus, setImageStatus] = useState<"idle" | "loading" | "error">("idle");
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageNote, setImageNote] = useState<{ confidence: string; notes: string[] } | null>(null);
@@ -48,7 +44,7 @@ export function ClaimForm({
     setImageError(null);
 
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setImageError("סוג קובץ לא נתמך. יש להעלות JPEG, PNG, GIF או WebP בלבד.");
+      setImageError(t.unsupportedFileType);
       setImageStatus("error");
       return;
     }
@@ -81,7 +77,7 @@ export function ClaimForm({
       // Never leak a raw browser/runtime exception to the user — only a KnownError
       // carries a message we wrote ourselves and know is clear Hebrew.
       console.error("Image text extraction failed:", err);
-      const message = err instanceof KnownError ? err.message : "שגיאה לא צפויה בעיבוד התמונה. נסו שוב, או עם תמונה אחרת.";
+      const message = err instanceof KnownError ? err.message : t.genericImageError;
       setImageError(message);
       setImageStatus("error");
     }
@@ -91,7 +87,7 @@ export function ClaimForm({
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
       <div>
         <label htmlFor="claim-text" className="mb-1 block text-sm font-medium text-stone-700">
-          טקסט, כותרת, ציטוט או פוסט לבדיקה
+          {t.textLabel}
         </label>
         <textarea
           id="claim-text"
@@ -100,7 +96,7 @@ export function ClaimForm({
           maxLength={8000}
           rows={5}
           disabled={disabled}
-          placeholder="הדבק כאן כותרת, ציטוט, פוסט או טענה שברצונך לבדוק..."
+          placeholder={t.textPlaceholder}
           className="w-full resize-none rounded-md border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
         />
         {imageNote && (
@@ -110,15 +106,17 @@ export function ClaimForm({
               (imageNote.confidence === "low" ? "text-amber-700" : "text-stone-500")
             }
           >
-            זיהוי טקסט מהתמונה: {CONFIDENCE_LABEL[imageNote.confidence] ?? imageNote.confidence}
-            {imageNote.notes.length > 0 && ` — ${imageNote.notes.join("; ")}`}. בדוק/י ותקן/י לפני הבדיקה.
+            {t.imageNotePrefix}
+            {t.confidenceLabels[imageNote.confidence as keyof typeof t.confidenceLabels] ?? imageNote.confidence}
+            {imageNote.notes.length > 0 && ` — ${imageNote.notes.join("; ")}`}
+            {t.imageNoteSuffix}
           </p>
         )}
       </div>
 
       <div>
         <label htmlFor="claim-url" className="mb-1 block text-sm font-medium text-stone-700">
-          או קישור לכתבה / פוסט
+          {t.urlLabel}
         </label>
         <input
           id="claim-url"
@@ -127,13 +125,13 @@ export function ClaimForm({
           onChange={(e) => onUrlChange(e.target.value)}
           maxLength={2000}
           disabled={disabled}
-          placeholder="https://..."
+          placeholder={t.urlPlaceholder}
           className="w-full rounded-md border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 disabled:bg-stone-50"
         />
       </div>
 
       <div>
-        <span className="mb-1 block text-sm font-medium text-stone-700">או העלאת צילום מסך</span>
+        <span className="mb-1 block text-sm font-medium text-stone-700">{t.imageUploadLabel}</span>
         <input
           ref={fileInputRef}
           type="file"
@@ -148,14 +146,10 @@ export function ClaimForm({
           onClick={() => fileInputRef.current?.click()}
           className="flex w-full items-center justify-center rounded-md border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {imageStatus === "loading"
-            ? "מזהה טקסט בתמונה..."
-            : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP) — הטקסט שיזוהה יתווסף לתיבה למעלה לבדיקה ועריכה"}
+          {imageStatus === "loading" ? t.uploadButtonLoading : t.uploadButtonIdle}
         </button>
         {imageError && <p className="mt-1 text-xs text-rose-600">{imageError}</p>}
-        <p className="mt-1 text-xs text-stone-400">
-          התמונה נשלחת לשירות ה-AI של Anthropic (Claude) לזיהוי הטקסט שבה בלבד, ואינה נשמרת באתר.
-        </p>
+        <p className="mt-1 text-xs text-stone-600">{t.imageDisclaimer}</p>
       </div>
 
       <button
@@ -163,7 +157,7 @@ export function ClaimForm({
         disabled={!canSubmit}
         className="w-full rounded-md bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300"
       >
-        בדוק אמינות
+        {t.submit}
       </button>
     </form>
   );

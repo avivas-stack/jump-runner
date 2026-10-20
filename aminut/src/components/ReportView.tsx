@@ -12,6 +12,7 @@ import {
   formatDate,
 } from "./ReportView.helpers";
 import { VerdictHero } from "./ReportView.verdict";
+import { useLanguage, useTranslation } from "@/lib/i18n/LanguageContext";
 
 export function ReportView({
   report,
@@ -22,6 +23,8 @@ export function ReportView({
   shareUrl?: string | null;
   onNewCheck?: () => void;
 }) {
+  const t = useTranslation("report");
+  const { language } = useLanguage();
   return (
     <div className="space-y-6">
       {onNewCheck && (
@@ -30,14 +33,15 @@ export function ReportView({
           onClick={onNewCheck}
           className="w-full rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
         >
-          + בדיקה חדשה
+          {t.newCheckButton}
         </button>
       )}
 
       {report.incomplete && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <strong className="font-semibold">בדיקה חלקית: </strong>
-          {report.incompleteReason ?? "לא כל המידע הדרוש היה זמין."} התוצאה אינה בדיקת עובדות מלאה.
+          <strong className="font-semibold">{t.partialCheckLabel}</strong>
+          {report.incompleteReason ?? t.partialCheckDefaultReason}
+          {t.partialCheckSuffix}
         </div>
       )}
 
@@ -51,7 +55,7 @@ export function ReportView({
       <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-serif text-lg font-bold text-stone-900">הערכה כוללת</h2>
+            <h2 className="font-serif text-lg font-bold text-stone-900">{t.overallAssessmentTitle}</h2>
             <p className="mt-2 text-stone-700">{report.overallAssessment}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
@@ -66,19 +70,20 @@ export function ReportView({
             ))}
           </ul>
         )}
-        <p className="mt-3 text-xs text-stone-400">
-          מבוסס על המקורות שנמצאו נכון ל-{formatDate(report.checkedAt)}. ייתכנו טעויות בבדיקה, ולכן יש להפעיל ביקורת
-          ושיקול דעת.
+        <p className="mt-3 text-xs text-stone-600">
+          {t.basedOnSourcesPrefix}
+          {formatDate(report.checkedAt, language)}
+          {t.basedOnSourcesSuffix}
         </p>
       </section>
 
       {report.claims.length > 1 && <ClaimComparisonTable report={report} />}
 
       <section className="space-y-4">
-        <h2 className="font-serif text-lg font-bold text-stone-900">טענות שחולצו</h2>
+        <h2 className="font-serif text-lg font-bold text-stone-900">{t.extractedClaimsTitle}</h2>
         {report.claims.length === 0 ? (
           <p className="rounded-md border border-stone-200 bg-white p-4 text-sm text-stone-500">
-            לא זוהו טענות עובדתיות הניתנות לבדיקה בטקסט שסופק.
+            {t.noClaimsFound}
           </p>
         ) : (
           report.claims.map((claim) => {
@@ -95,14 +100,14 @@ export function ReportView({
 
       {report.evidence.length > 0 && (
         <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-          <h2 className="font-serif text-lg font-bold text-stone-900">כל המקורות</h2>
+          <h2 className="font-serif text-lg font-bold text-stone-900">{t.allSourcesTitle}</h2>
           <SourceList evidence={report.evidence} />
         </section>
       )}
 
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-stone-900">מגבלות הבדיקה</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{t.limitationsTitle}</h3>
           {report.limitations.length ? (
             <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-stone-600">
               {report.limitations.map((l, i) => (
@@ -110,11 +115,11 @@ export function ReportView({
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-stone-400">לא דווחו מגבלות נוספות.</p>
+            <p className="mt-2 text-sm text-stone-600">{t.noLimitations}</p>
           )}
         </div>
         <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-stone-900">שאלות פתוחות</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{t.openQuestionsTitle}</h3>
           {report.openQuestions.length ? (
             <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-stone-600">
               {report.openQuestions.map((q, i) => (
@@ -122,12 +127,15 @@ export function ReportView({
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-stone-400">אין שאלות פתוחות נוספות.</p>
+            <p className="mt-2 text-sm text-stone-600">{t.noOpenQuestions}</p>
           )}
         </div>
       </section>
 
-      <p className="text-center text-xs text-stone-400">נבדק ב-{formatDate(report.checkedAt)}</p>
+      <p className="text-center text-xs text-stone-600">
+        {t.checkedAtPrefix}
+        {formatDate(report.checkedAt, language)}
+      </p>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import type { Classification, Confidence, Report } from "@/lib/types";
+import type { Classification, Report } from "@/lib/types";
 import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 /**
  * A large, hard-to-miss verdict summary at the very top of the report. Deliberately
@@ -10,13 +11,18 @@ import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
  * not a simplification of what the classifications mean.
  */
 export function VerdictHero({ report }: { report: Report }) {
+  const t = useTranslation("reportVerdict");
+  const classifications = useTranslation("classifications");
+
   if (report.claims.length === 1) {
     const evaluation = report.evaluations.find((e) => e.claimId === report.claims[0].id);
     if (!evaluation) return null;
     return (
       <section className="rounded-lg border border-stone-200 bg-white p-6 text-center shadow-sm">
-        <span className={BIG_BADGE_STYLES[evaluation.classification]}>{evaluation.classification}</span>
-        <p className="mt-2 text-sm text-stone-500">{CONFIDENCE_FULL_LABEL[evaluation.confidence]}</p>
+        <span className={BIG_BADGE_STYLES[evaluation.classification]}>
+          {classifications.label[evaluation.classification]}
+        </span>
+        <p className="mt-2 text-sm text-stone-500">{classifications.confidenceFull[evaluation.confidence]}</p>
         <div className="mt-1">
           <RecommendationNote classification={evaluation.classification} />
         </div>
@@ -31,7 +37,9 @@ export function VerdictHero({ report }: { report: Report }) {
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 className="text-center text-xs font-medium tracking-wide text-stone-500 uppercase">סיכום הסיווגים</h2>
+      <h2 className="text-center text-xs font-medium tracking-wide text-stone-500 uppercase">
+        {t.classificationsSummaryTitle}
+      </h2>
       <div className="mt-3 flex flex-wrap items-start justify-center gap-4">
         {Array.from(counts.entries()).map(([classification, count]) => (
           <div key={classification} className="flex flex-col items-center gap-1">
@@ -59,10 +67,4 @@ const BIG_BADGE_STYLES: Record<Classification, string> = {
   "שנוי במחלוקת": `${BIG_BADGE_BASE} border-violet-700 text-violet-900 bg-violet-50/60`,
   מיושן: `${BIG_BADGE_BASE} border-sky-700 text-sky-900 bg-sky-50/60`,
   "דעה, תחזית או סאטירה": `${BIG_BADGE_BASE} italic border-stone-500 text-stone-700 bg-stone-100/60`,
-};
-
-const CONFIDENCE_FULL_LABEL: Record<Confidence, string> = {
-  low: "ביטחון נמוך — הראיות מוגבלות או לא חד-משמעיות",
-  medium: "ביטחון בינוני — יש ראיות סבירות אך לא מכריעות",
-  high: "ביטחון גבוה — הראיות ברורות ועקביות",
 };

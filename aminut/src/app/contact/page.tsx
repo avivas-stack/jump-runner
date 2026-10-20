@@ -4,14 +4,10 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import type { FeedbackCategory } from "@/lib/types";
 import { SITE_NAME } from "@/lib/siteConfig";
-
-const CATEGORY_LABEL: Record<FeedbackCategory, string> = {
-  bug: "דיווח על באג / תקלה",
-  privacy: "בקשה בנושא פרטיות (כולל הסרת דוח)",
-  other: "פנייה אחרת",
-};
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 export default function ContactPage() {
+  const t = useTranslation("contact");
   const [category, setCategory] = useState<FeedbackCategory>("bug");
   const [message, setMessage] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -32,13 +28,13 @@ export default function ContactPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error ?? "שליחת הפנייה נכשלה");
+        throw new Error(data.error ?? t.genericSubmitError);
       }
       setStatus("sent");
       setMessage("");
       setContactEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "שליחת הפנייה נכשלה. נסו שוב.");
+      setError(err instanceof Error ? err.message : t.genericSubmitErrorRetry);
       setStatus("error");
     }
   };
@@ -51,26 +47,26 @@ export default function ContactPage() {
           <img src="/logo.png" alt="" aria-hidden className="h-7 w-7 sm:h-8 sm:w-8" />
           {SITE_NAME}
         </Link>
-        <h1 className="mt-2 text-lg font-semibold text-stone-700">יצירת קשר</h1>
+        <h1 className="mt-2 text-lg font-semibold text-stone-700">{t.pageTitle}</h1>
       </header>
 
       <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
         {status === "sent" ? (
           <div className="text-center">
-            <p className="text-stone-700">הפנייה נשלחה, תודה! נטפל בה בהקדם.</p>
+            <p className="text-stone-700">{t.sentMessage}</p>
             <button
               type="button"
               onClick={() => setStatus("idle")}
               className="mt-4 text-sm font-medium text-teal-700 underline"
             >
-              שליחת פנייה נוספת
+              {t.sendAnother}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="category" className="mb-1 block text-sm font-medium text-stone-700">
-                סוג הפנייה
+                {t.categoryFieldLabel}
               </label>
               <select
                 id="category"
@@ -78,9 +74,9 @@ export default function ContactPage() {
                 onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
                 className="w-full rounded-md border border-stone-300 bg-white p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
               >
-                {(Object.keys(CATEGORY_LABEL) as FeedbackCategory[]).map((key) => (
+                {(Object.keys(t.categoryLabel) as FeedbackCategory[]).map((key) => (
                   <option key={key} value={key}>
-                    {CATEGORY_LABEL[key]}
+                    {t.categoryLabel[key]}
                   </option>
                 ))}
               </select>
@@ -88,7 +84,7 @@ export default function ContactPage() {
 
             <div>
               <label htmlFor="message" className="mb-1 block text-sm font-medium text-stone-700">
-                תוכן הפנייה
+                {t.messageFieldLabel}
               </label>
               <textarea
                 id="message"
@@ -99,10 +95,10 @@ export default function ContactPage() {
                 required
                 placeholder={
                   category === "bug"
-                    ? "מה קרה? אילו שלבים הובילו לכך? (אם אפשר, גם מה ציפית שיקרה)"
+                    ? t.messagePlaceholderBug
                     : category === "privacy"
-                      ? "אם מדובר בבקשה להסרת דוח, נא לצרף את הקישור לדוח"
-                      : "איך אפשר לעזור?"
+                      ? t.messagePlaceholderPrivacy
+                      : t.messagePlaceholderOther
                 }
                 className="w-full resize-none rounded-md border border-stone-300 p-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
               />
@@ -110,7 +106,7 @@ export default function ContactPage() {
 
             <div>
               <label htmlFor="contact-email" className="mb-1 block text-sm font-medium text-stone-700">
-                אימייל לחזרה אליך (לא חובה)
+                {t.emailFieldLabel}
               </label>
               <input
                 id="contact-email"
@@ -131,7 +127,7 @@ export default function ContactPage() {
               disabled={status === "loading" || !message.trim()}
               className="w-full rounded-md bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
-              {status === "loading" ? "שולח..." : "שליחה"}
+              {status === "loading" ? t.submitSending : t.submitIdle}
             </button>
           </form>
         )}
@@ -139,7 +135,7 @@ export default function ContactPage() {
 
       <p className="mt-6 text-center text-sm">
         <Link href="/" className="font-medium text-teal-700 underline">
-          חזרה לדף הבית
+          {t.backToHome}
         </Link>
       </p>
     </main>

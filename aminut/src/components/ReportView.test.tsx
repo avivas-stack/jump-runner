@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { ReportView } from "./ReportView";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import type { Report } from "@/lib/types";
+
+// ReportView (and the components it renders) read the current language via
+// useTranslation, which throws outside a LanguageProvider — these tests don't render
+// the full app layout, so each render is wrapped here instead.
+function renderWithLanguage(ui: ReactElement) {
+  return render(<LanguageProvider>{ui}</LanguageProvider>);
+}
 
 const report: Report = {
   id: "r1",
@@ -89,7 +98,7 @@ const report: Report = {
 
 describe("ReportView", () => {
   it("renders the overall assessment, each claim's classification, and sources as links", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
 
     expect(screen.getByText(report.overallAssessment)).toBeInTheDocument();
     expect(screen.getAllByText("מאומת").length).toBeGreaterThan(0);
@@ -101,25 +110,25 @@ describe("ReportView", () => {
   });
 
   it("shows a visible incomplete banner when the report is marked incomplete, never presenting it as a full check", () => {
-    render(<ReportView report={{ ...report, incomplete: true, incompleteReason: "לא בוצע חיפוש אמיתי" }} />);
+    renderWithLanguage(<ReportView report={{ ...report, incomplete: true, incompleteReason: "לא בוצע חיפוש אמיתי" }} />);
     expect(screen.getByText(/בדיקה חלקית/)).toBeInTheDocument();
     expect(screen.getByText(/לא בוצע חיפוש אמיתי/)).toBeInTheDocument();
   });
 
   it("shows an empty-state message instead of a fabricated claim list when no claims were found", () => {
-    render(<ReportView report={{ ...report, claims: [], evaluations: [] }} />);
+    renderWithLanguage(<ReportView report={{ ...report, claims: [], evaluations: [] }} />);
     expect(screen.getByText(/לא זוהו טענות עובדתיות/)).toBeInTheDocument();
   });
 
   it("shows a claim-comparison table when there is more than one claim, linking each row to its card", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.getByText("השוואת טענות")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /טענה ראשונה שאומתה/ });
     expect(link).toHaveAttribute("href", "#claim-c1");
   });
 
   it("hides the comparison table for a single-claim report (nothing to compare)", () => {
-    render(<ReportView report={{ ...report, claims: [report.claims[0]], evaluations: [report.evaluations[0]] }} />);
+    renderWithLanguage(<ReportView report={{ ...report, claims: [report.claims[0]], evaluations: [report.evaluations[0]] }} />);
     expect(screen.queryByText("השוואת טענות")).not.toBeInTheDocument();
   });
 
@@ -133,19 +142,19 @@ describe("ReportView", () => {
         { ...report.evidence[0], id: "e3", claimId: "c1", url: sharedUrl, title: "כתבה משותפת" },
       ],
     };
-    render(<ReportView report={reportWithSharedSource} />);
+    renderWithLanguage(<ReportView report={reportWithSharedSource} />);
     expect(screen.getByText(/מקור אחד שימש לבדיקת יותר מטענה אחת/)).toBeInTheDocument();
   });
 
   it("renders plainExplanation as separate bullet points, not one paragraph", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.getByText("הסבר מפורט בעברית על הממצאים")).toBeInTheDocument();
     expect(screen.getByText("נקודה שנייה בהסבר")).toBeInTheDocument();
   });
 
   it("shows a large single-verdict badge for a one-claim report, keeping the full classification wording (never a true/false binary)", () => {
     const singleClaimReport = { ...report, claims: [report.claims[0]], evaluations: [report.evaluations[0]] };
-    render(<ReportView report={singleClaimReport} />);
+    renderWithLanguage(<ReportView report={singleClaimReport} />);
     // The big hero badge and the per-claim card both render the classification/confidence text.
     expect(screen.getAllByText("מאומת").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/ביטחון גבוה/).length).toBeGreaterThanOrEqual(2);
@@ -164,7 +173,7 @@ describe("ReportView", () => {
         },
       ],
     };
-    render(<ReportView report={singleClaimReport} />);
+    renderWithLanguage(<ReportView report={singleClaimReport} />);
     // Two visible occurrences: the big hero badge and the per-claim card. (The
     // "how it works" legend also lists every classification name, incl. שקרי and
     // לא ניתן לאימות, inside a closed <dialog> — present in the DOM by design,
@@ -173,7 +182,7 @@ describe("ReportView", () => {
   });
 
   it("shows a classification-count summary for a multi-claim report instead of one single verdict", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.getByText("סיכום הסיווגים")).toBeInTheDocument();
     expect(screen.getAllByText("× 1")).toHaveLength(2);
   });
@@ -188,7 +197,7 @@ describe("ReportView", () => {
       evaluations: [report.evaluations[0]],
       evidence: [{ ...report.evidence[0], excerpt: longExcerpt }],
     };
-    render(<ReportView report={singleClaimReport} />);
+    renderWithLanguage(<ReportView report={singleClaimReport} />);
 
     expect(screen.queryByText(longExcerpt)).not.toBeInTheDocument();
     const showMore = screen.getByRole("button", { name: "הצג עוד" });
@@ -199,19 +208,19 @@ describe("ReportView", () => {
 
   it("renders a 'new check' button at the top only when onNewCheck is provided", () => {
     const onNewCheck = vi.fn();
-    render(<ReportView report={report} onNewCheck={onNewCheck} />);
+    renderWithLanguage(<ReportView report={report} onNewCheck={onNewCheck} />);
     const button = screen.getByRole("button", { name: /בדיקה חדשה/ });
     button.click();
     expect(onNewCheck).toHaveBeenCalledOnce();
   });
 
   it("omits the top 'new check' button when onNewCheck is not provided", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.queryByRole("button", { name: /בדיקה חדשה/ })).not.toBeInTheDocument();
   });
 
   it("shows a share/don't-share recommendation next to every classification, defaulting false claims to don't-share", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     // מאומת -> share; שקרי -> block. Each appears at least in the hero/summary and the claim card.
     expect(screen.getAllByText("המלצה: אפשר להעביר").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("המלצה: לא להעביר!").length).toBeGreaterThanOrEqual(1);
@@ -223,7 +232,7 @@ describe("ReportView", () => {
       claims: [report.claims[0]],
       evaluations: [{ ...report.evaluations[0], classification: "לא ניתן לאימות" as const }],
     };
-    render(<ReportView report={singleClaimReport} />);
+    renderWithLanguage(<ReportView report={singleClaimReport} />);
     expect(screen.getAllByText("המלצה: לא להעביר!").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("המלצה: אפשר להעביר")).not.toBeInTheDocument();
   });
@@ -248,7 +257,7 @@ describe("ReportView", () => {
         },
       ],
     };
-    render(<ReportView report={reportWithFactChecker} />);
+    renderWithLanguage(<ReportView report={reportWithFactChecker} />);
     expect(screen.getByText("מה אתרי בדיקת עובדות אחרים אמרו")).toBeInTheDocument();
     // Appears both in the dedicated section and in the full "all sources" list below it.
     const links = screen.getAllByRole("link", { name: "בדיקה של FakeReporter" });
@@ -257,7 +266,7 @@ describe("ReportView", () => {
   });
 
   it("omits the fact-checking-sites section when no fact-checker evidence was found", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.queryByText("מה אתרי בדיקת עובדות אחרים אמרו")).not.toBeInTheDocument();
   });
 
@@ -267,13 +276,13 @@ describe("ReportView", () => {
       claims: [report.claims[0]],
       evaluations: [{ ...report.evaluations[0], likelyOrigin: "הציטוט נלקח מתוך ראיון ישן מ-2019 ומוצג כאילו נאמר השבוע" }],
     };
-    render(<ReportView report={singleClaimReport} />);
+    renderWithLanguage(<ReportView report={singleClaimReport} />);
     expect(screen.getByText("מאיפה ייתכן שהגיע המידע?")).toBeInTheDocument();
     expect(screen.getByText(/ראיון ישן מ-2019/)).toBeInTheDocument();
   });
 
   it("omits the 'where might this have come from' section when no likely origin was determined", () => {
-    render(<ReportView report={report} />);
+    renderWithLanguage(<ReportView report={report} />);
     expect(screen.queryByText("מאיפה ייתכן שהגיע המידע?")).not.toBeInTheDocument();
   });
 });

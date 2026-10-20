@@ -5,6 +5,7 @@ import { getReportById as getReportByIdUncached } from "@/lib/reportStore";
 import { ReportView } from "@/components/ReportView";
 import { SITE_NAME } from "@/lib/siteConfig";
 import type { Classification, Report } from "@/lib/types";
+import { BackToHomeLink, ReportNotFoundMessage, SharedReportSubtitle } from "./ReportPageChrome";
 
 // Shared between generateMetadata and the page body so a single request only ever
 // fetches the report once (React's per-request cache, not a cross-request cache).
@@ -95,14 +96,7 @@ async function ReportContent({ params }: { params: PageProps<"/report/[id]">["pa
   const report = await getReportById(id);
 
   if (!report) {
-    return (
-      <div className="text-center">
-        <h1 className="text-xl font-semibold text-stone-900">הדוח לא נמצא</h1>
-        <p className="mt-2 text-sm text-stone-600">
-          ייתכן שהקישור שגוי, שהדוח נמחק, או שאחסון דוחות אינו מוגדר בסביבה זו.
-        </p>
-      </div>
-    );
+    return <ReportNotFoundMessage />;
   }
 
   const shareUrl = `/report/${id}`;
@@ -138,15 +132,13 @@ export default function SharedReportPage({ params }: PageProps<"/report/[id]">) 
           <img src="/logo.png" alt="" aria-hidden className="h-7 w-7 sm:h-8 sm:w-8" />
           {SITE_NAME}
         </Link>
-        <p className="mt-2 text-sm text-stone-600">דוח בדיקה משותף</p>
+        <SharedReportSubtitle />
       </header>
       <Suspense fallback={<ReportSkeleton />}>
         <ReportContent params={params} />
       </Suspense>
       <p className="mt-6 text-center text-sm">
-        <Link href="/" className="font-medium text-teal-700 underline">
-          חזרה לדף הבית
-        </Link>
+        <BackToHomeLink />
       </p>
     </main>
   );

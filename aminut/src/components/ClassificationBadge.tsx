@@ -1,4 +1,5 @@
 import type { Classification, Confidence } from "@/lib/types";
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 /**
  * A stamp, not a pill: a sharp-cornered mark with a solid left bar and small-caps
@@ -18,41 +19,38 @@ const STYLES: Record<Classification, string> = {
 };
 
 export function ClassificationBadge({ classification }: { classification: Classification }) {
+  const t = useTranslation("classifications");
   return (
     <span
       className={`inline-flex items-center border-s-4 px-3 py-1 text-xs font-bold tracking-wide ${STYLES[classification]}`}
     >
-      {classification}
+      {t.label[classification]}
     </span>
   );
 }
 
-const CONFIDENCE_LABEL: Record<Confidence, string> = {
-  low: "ביטחון נמוך — הראיות מוגבלות או לא חד-משמעיות",
-  medium: "ביטחון בינוני — יש ראיות סבירות אך לא מכריעות",
-  high: "ביטחון גבוה — הראיות ברורות ועקביות",
-};
-
 export function ConfidenceNote({ confidence }: { confidence: Confidence }) {
-  return <p className="text-xs text-stone-500">{CONFIDENCE_LABEL[confidence]}</p>;
+  const t = useTranslation("classifications");
+  return <p className="text-xs text-stone-500">{t.confidenceFull[confidence]}</p>;
 }
 
 /**
  * A plain-language "should I share this" recommendation for each classification.
  * Deliberately conservative: anything not clearly verified (including "unverifiable")
  * defaults to "don't share" — the cost of a false "share it" is much higher than an
- * over-cautious "don't" for content that turns out fine.
+ * over-cautious "don't" for content that turns out fine. The tone (for styling) never
+ * changes with language, only the displayed text does — so it stays as plain code here.
  */
-const RECOMMENDATION: Record<Classification, { text: string; tone: "share" | "caution" | "block" }> = {
-  מאומת: { text: "המלצה: אפשר להעביר", tone: "share" },
-  שקרי: { text: "המלצה: לא להעביר!", tone: "block" },
-  מטעה: { text: "המלצה: לא להעביר!", tone: "block" },
-  "חסר הקשר": { text: "המלצה: אפשר להעביר רק בצירוף ההקשר החסר", tone: "caution" },
-  "לא ניתן לאימות": { text: "המלצה: לא להעביר!", tone: "block" },
-  'ככה"נ שקרי': { text: "המלצה: לא להעביר!", tone: "block" },
-  "שנוי במחלוקת": { text: "המלצה: להעביר בזהירות — הנושא שנוי במחלוקת", tone: "caution" },
-  מיושן: { text: "המלצה: לא להעביר בלי לציין שהמידע מיושן", tone: "caution" },
-  "דעה, תחזית או סאטירה": { text: "המלצה: אפשר להעביר, בציון שמדובר בדעה/תחזית/סאטירה", tone: "share" },
+const RECOMMENDATION_TONE: Record<Classification, "share" | "caution" | "block"> = {
+  מאומת: "share",
+  שקרי: "block",
+  מטעה: "block",
+  "חסר הקשר": "caution",
+  "לא ניתן לאימות": "block",
+  'ככה"נ שקרי': "block",
+  "שנוי במחלוקת": "caution",
+  מיושן: "caution",
+  "דעה, תחזית או סאטירה": "share",
 };
 
 const RECOMMENDATION_TONE_STYLES: Record<"share" | "caution" | "block", string> = {
@@ -62,6 +60,7 @@ const RECOMMENDATION_TONE_STYLES: Record<"share" | "caution" | "block", string> 
 };
 
 export function RecommendationNote({ classification }: { classification: Classification }) {
-  const { text, tone } = RECOMMENDATION[classification];
-  return <p className={`text-xs font-medium ${RECOMMENDATION_TONE_STYLES[tone]}`}>{text}</p>;
+  const t = useTranslation("classifications");
+  const tone = RECOMMENDATION_TONE[classification];
+  return <p className={`text-xs font-medium ${RECOMMENDATION_TONE_STYLES[tone]}`}>{t.recommendation[classification]}</p>;
 }

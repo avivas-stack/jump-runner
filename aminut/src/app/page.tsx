@@ -9,6 +9,8 @@ import { LoadingStages } from "@/components/LoadingStages";
 import { ReportView } from "@/components/ReportView";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { AiImageDetector } from "@/components/AiImageDetector";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 import { useVerifyPipeline } from "@/hooks/useVerifyPipeline";
 import {
   clearHistory,
@@ -19,36 +21,9 @@ import {
 } from "@/lib/clientHistory";
 import type { Report, VerifyRequest } from "@/lib/types";
 
-const STEPS = [
-  { icon: "✍️", text: "מדביקים טענה, קישור או צילום מסך" },
-  { icon: "🔎", text: "Facto בודק מול מקורות אמיתיים ברשת" },
-  { icon: "📋", text: "מקבלים דוח ברור עם מקורות ורמת ביטחון" },
-];
-
-const BENEFITS = [
-  {
-    icon: "⏱️",
-    title: "לפני שמעבירים הלאה",
-    text: "קיבלתם משהו בוואטסאפ או בקבוצה? בדקו לפני שאתם משתפים אותו הלאה.",
-  },
-  {
-    icon: "🔗",
-    title: "לא ניחוש, מקורות",
-    text: "כל תשובה מגיעה עם קישורים למקורות אמיתיים, כדי שתוכלו לבדוק בעצמכם.",
-  },
-  {
-    icon: "🖼️",
-    title: "גם לתמונות",
-    text: "מזהה כשתמונה חשודה נוצרה או עובדה בעזרת AI.",
-  },
-  {
-    icon: "⚡",
-    title: "מהיר וחינמי",
-    text: "בדיקה לוקחת כדקה, בלי הרשמה ובלי עלות.",
-  },
-];
-
 export default function Home() {
+  const t = useTranslation("home");
+  const common = useTranslation("common");
   const { state, run, reset } = useVerifyPipeline();
   const history = useSyncExternalStore(subscribeHistory, getHistorySnapshot, getServerHistorySnapshot);
   const [hadUrl, setHadUrl] = useState(false);
@@ -57,6 +32,20 @@ export default function Home() {
   const [claimText, setClaimText] = useState("");
   const [claimUrl, setClaimUrl] = useState("");
   const [activeTab, setActiveTab] = useState<"claims" | "aiImage">("claims");
+
+  // Lets the browser extension (and anyone sharing a deep link) open the site with a
+  // claim pre-filled, e.g. /?text=... or /?url=... — read via plain window.location
+  // rather than next/navigation's useSearchParams so this stays a one-time client-only
+  // read with no Suspense-boundary/static-rendering implications for the page.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefillText = params.get("text");
+    const prefillUrl = params.get("url");
+    if (!prefillText && !prefillUrl) return;
+    if (prefillText) setClaimText(prefillText);
+    if (prefillUrl) setClaimUrl(prefillUrl);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   useEffect(() => {
     if (state.status === "done" && state.report) {
@@ -92,20 +81,21 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">
-      <header className="mb-8 border-b-2 border-stone-900 pb-6 text-center">
-        <p className="text-xs font-semibold tracking-[0.2em] text-stone-500 uppercase">כלי לבדיקת מהימנות</p>
+      <header className="relative mb-8 border-b-2 border-stone-900 pb-6 text-center">
+        <div className="absolute top-0 start-0">
+          <LanguageToggle />
+        </div>
+        <p className="text-xs font-semibold tracking-[0.2em] text-stone-500 uppercase">{t.eyebrow}</p>
         <div className="mt-1 flex items-center justify-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" aria-hidden className="h-9 w-9" />
           <h1 className="font-serif text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">Facto</h1>
         </div>
-        <p className="mt-2 text-sm text-stone-600">
-          בודקים טענות, כותרות ושמועות מול מקורות אמיתיים — לפני שמאמינים.
-        </p>
+        <p className="mt-2 text-sm text-stone-600">{t.tagline}</p>
         {showForm && activeTab === "claims" && (
           <>
             <ul className="mx-auto mt-5 flex max-w-xl flex-col gap-2 text-start text-xs text-stone-500 sm:flex-row sm:items-start sm:justify-center sm:gap-4 sm:text-center">
-              {STEPS.map((step, i) => (
+              {t.steps.map((step, i) => (
                 <li key={i} className="flex items-center gap-2 sm:flex-col sm:gap-1">
                   <span aria-hidden className="text-base">
                     {step.icon}
@@ -128,7 +118,7 @@ export default function Home() {
               activeTab === "claims" ? "bg-teal-700 text-white" : "text-stone-600 hover:bg-stone-50"
             }`}
           >
-            בדיקת טענות
+            {t.tabClaims}
           </button>
           <button
             type="button"
@@ -137,14 +127,14 @@ export default function Home() {
               activeTab === "aiImage" ? "bg-teal-700 text-white" : "text-stone-600 hover:bg-stone-50"
             }`}
           >
-            זיהוי AI בתמונה
+            {t.tabAiImage}
           </button>
         </div>
       </header>
 
       {showForm && (
         <section className="mx-auto mb-8 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {BENEFITS.map((benefit) => (
+          {t.benefits.map((benefit) => (
             <div
               key={benefit.title}
               className="rounded-lg border border-stone-200 bg-white p-4 text-center shadow-sm"
@@ -185,7 +175,7 @@ export default function Home() {
                   onClick={reset}
                   className="w-full rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
                 >
-                  ביטול
+                  {t.cancelCheck}
                 </button>
               </div>
             )}
@@ -193,7 +183,7 @@ export default function Home() {
             {state.status === "error" && state.error && (
               <div className="space-y-4">
                 <div className="rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                  <strong className="font-semibold">הבדיקה נכשלה: </strong>
+                  <strong className="font-semibold">{t.checkFailed}</strong>
                   {state.error.message}
                 </div>
                 <button
@@ -201,7 +191,7 @@ export default function Home() {
                   onClick={reset}
                   className="w-full rounded-md border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-50"
                 >
-                  נסה שוב
+                  {common.retry}
                 </button>
               </div>
             )}
@@ -214,7 +204,7 @@ export default function Home() {
                   onClick={startNewCheck}
                   className="w-full rounded-md bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800"
                 >
-                  + בדיקה חדשה
+                  {t.newCheck}
                 </button>
               </div>
             )}
@@ -239,21 +229,21 @@ export default function Home() {
         </div>
       )}
 
-      <footer className="mt-10 text-center text-xs text-stone-400">
-        הכלי מספק עזרה לחשיבה ביקורתית בהתבסס על מקורות שנמצאו במועד הבדיקה.
+      <footer className="mt-10 text-center text-xs text-stone-600">
+        {t.footerDisclaimer1}
         <br />
-        ייתכנו טעויות בבדיקה, ולכן יש להפעיל ביקורת ושיקול דעת.
+        {t.footerDisclaimer2}
         <br />
-        <Link href="/what-is-fake-news" className="underline hover:text-stone-600">
-          מה זה פייק ניוז?
+        <Link href="/what-is-fake-news" className="underline hover:text-stone-900">
+          {t.footerWhatIsFakeNews}
         </Link>
         {" · "}
-        <Link href="/privacy" className="underline hover:text-stone-600">
-          מדיניות פרטיות ותנאי שימוש
+        <Link href="/privacy" className="underline hover:text-stone-900">
+          {t.footerPrivacy}
         </Link>
         {" · "}
-        <Link href="/contact" className="underline hover:text-stone-600">
-          יצירת קשר / דיווח על באג
+        <Link href="/contact" className="underline hover:text-stone-900">
+          {t.footerContact}
         </Link>
       </footer>
     </div>

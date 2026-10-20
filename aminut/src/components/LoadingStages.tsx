@@ -1,15 +1,16 @@
 import type { StageEvent } from "@/lib/types";
-
-const ALL_STAGES: { key: string; label: string }[] = [
-  { key: "fetching_url", label: "מאחזר את תוכן הקישור" },
-  { key: "extracting_claims", label: "מחלץ טענות מהטקסט" },
-  { key: "searching", label: "מחפש ראיות מול מקורות" },
-  { key: "comparing_sources", label: "משווה בין מקורות" },
-  { key: "preparing_report", label: "מכין את הדוח" },
-];
+import { useTranslation } from "@/lib/i18n/LanguageContext";
 
 export function LoadingStages({ stage, hasUrl }: { stage: StageEvent | null; hasUrl: boolean }) {
-  const stages = hasUrl ? ALL_STAGES : ALL_STAGES.filter((s) => s.key !== "fetching_url");
+  const t = useTranslation("loadingStages");
+  const allStages: { key: string; label: string }[] = [
+    { key: "fetching_url", label: t.stages.fetching_url },
+    { key: "extracting_claims", label: t.stages.extracting_claims },
+    { key: "searching", label: t.stages.searching },
+    { key: "comparing_sources", label: t.stages.comparing_sources },
+    { key: "preparing_report", label: t.stages.preparing_report },
+  ];
+  const stages = hasUrl ? allStages : allStages.filter((s) => s.key !== "fetching_url");
   const currentKey = stage?.type === "stage" ? stage.stage : null;
   const currentIndex = stages.findIndex((s) => s.key === currentKey);
 
@@ -28,16 +29,20 @@ export function LoadingStages({ stage, hasUrl }: { stage: StageEvent | null; has
                     ? "border-emerald-600 bg-emerald-600 text-white"
                     : isActive
                       ? "border-teal-600 text-teal-700"
-                      : "border-stone-300 text-stone-400")
+                      : "border-stone-300 text-stone-600")
                 }
               >
                 {isDone ? "✓" : isActive ? <span className="h-2 w-2 animate-pulse rounded-full bg-teal-600" /> : ""}
               </span>
-              <span className={isActive ? "font-medium text-stone-900" : isDone ? "text-stone-500" : "text-stone-400"}>
+              <span className={isActive ? "font-medium text-stone-900" : isDone ? "text-stone-500" : "text-stone-600"}>
                 {s.label}
                 {isActive && s.key === "searching" && stage?.type === "stage" && stage.stage === "searching" && (
                   <span className="block text-xs font-normal text-stone-500">
-                    בודק טענה {stage.claimIndex} מתוך {stage.totalClaims}: &ldquo;{truncate(stage.claimText, 60)}&rdquo;
+                    {t.searchingDetailPrefix}
+                    {stage.claimIndex}
+                    {t.searchingDetailSeparator}
+                    {stage.totalClaims}
+                    {t.searchingDetailSuffix}&ldquo;{truncate(stage.claimText, 60)}&rdquo;
                   </span>
                 )}
               </span>

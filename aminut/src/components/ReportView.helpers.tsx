@@ -4,8 +4,12 @@ import { useState } from "react";
 import type { EvidenceItem, ExtractedClaim, Report } from "@/lib/types";
 import { SITE_NAME } from "@/lib/siteConfig";
 import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
+import { useLanguage, useTranslation } from "@/lib/i18n/LanguageContext";
+import type { Language } from "@/lib/i18n/LanguageContext";
 
 export function ClaimComparisonTable({ report }: { report: Report }) {
+  const t = useTranslation("report");
+  const classifications = useTranslation("classifications");
   // Sources cited for more than one claim — surfaces when two claims lean on the
   // same outlet/report, so a reader can spot a shared (not independent) basis at a glance.
   const urlToClaimIds = new Map<string, Set<string>>();
@@ -18,16 +22,16 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 className="font-serif text-lg font-bold text-stone-900">השוואת טענות</h2>
+      <h2 className="font-serif text-lg font-bold text-stone-900">{t.comparisonTitle}</h2>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[560px] text-start text-sm">
           <thead>
             <tr className="border-b border-stone-200 text-xs text-stone-500">
-              <th className="py-2 pe-2 font-medium">#</th>
-              <th className="py-2 pe-2 font-medium">טענה</th>
-              <th className="py-2 pe-2 font-medium">סיווג</th>
-              <th className="py-2 pe-2 font-medium">ביטחון</th>
-              <th className="py-2 font-medium">המלצה</th>
+              <th className="py-2 pe-2 font-medium">{t.comparisonHeaders.index}</th>
+              <th className="py-2 pe-2 font-medium">{t.comparisonHeaders.claim}</th>
+              <th className="py-2 pe-2 font-medium">{t.comparisonHeaders.classification}</th>
+              <th className="py-2 pe-2 font-medium">{t.comparisonHeaders.confidence}</th>
+              <th className="py-2 font-medium">{t.comparisonHeaders.recommendation}</th>
             </tr>
           </thead>
           <tbody>
@@ -36,7 +40,7 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
               if (!evaluation) return null;
               return (
                 <tr key={claim.id} className="border-b border-stone-100 last:border-0">
-                  <td className="py-2 pe-2 align-top text-stone-400">{i + 1}</td>
+                  <td className="py-2 pe-2 align-top text-stone-600">{i + 1}</td>
                   <td className="py-2 pe-2 align-top">
                     <a href={`#claim-${claim.id}`} className="text-stone-700 underline-offset-2 hover:underline">
                       {truncate(claim.originalText, 60)}
@@ -45,7 +49,9 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
                   <td className="py-2 pe-2 align-top">
                     <ClassificationBadge classification={evaluation.classification} />
                   </td>
-                  <td className="py-2 pe-2 align-top text-xs text-stone-500">{confidenceShortLabel(evaluation.confidence)}</td>
+                  <td className="py-2 pe-2 align-top text-xs text-stone-500">
+                    {classifications.confidenceShort[evaluation.confidence]}
+                  </td>
                   <td className="py-2 align-top">
                     <RecommendationNote classification={evaluation.classification} />
                   </td>
@@ -58,8 +64,8 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
       {sharedSourceCount > 0 && (
         <p className="mt-3 text-xs text-stone-500">
           {sharedSourceCount === 1
-            ? "מקור אחד שימש לבדיקת יותר מטענה אחת — לא בהכרח ראיה עצמאית נוספת לכל טענה."
-            : `${sharedSourceCount} מקורות שימשו לבדיקת יותר מטענה אחת — לא בהכרח ראיה עצמאית נוספת לכל טענה.`}
+            ? t.sharedSourceSingular
+            : `${sharedSourceCount} ${t.sharedSourcePluralSuffix}`}
         </p>
       )}
     </section>
@@ -73,6 +79,7 @@ export function ClaimComparisonTable({ report }: { report: Report }) {
  * separately. Renders nothing when no such evidence was found for this report.
  */
 export function FactCheckerSitesSection({ report }: { report: Report }) {
+  const t = useTranslation("report");
   const byClaim = new Map<string, EvidenceItem[]>();
   for (const item of report.evidence) {
     if (item.sourceType !== "fact-checker") continue;
@@ -84,11 +91,13 @@ export function FactCheckerSitesSection({ report }: { report: Report }) {
 
   return (
     <section className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm">
-      <h2 className="font-serif text-lg font-bold text-stone-900">מה אתרי בדיקת עובדות אחרים אמרו</h2>
+      <h2 className="font-serif text-lg font-bold text-stone-900">{t.factCheckerSitesTitle}</h2>
       <p className="mt-1 text-xs text-stone-500">
-        הממצאים הבאים מגיעים מאתרי בדיקת עובדות חיצוניים ועצמאיים (כמו <span dir="ltr">fakereporter.net</span> או{" "}
-        <span dir="ltr">irrelevant.org.il</span>) שעלו בחיפוש עבור הטענות שנבדקו כאן. אלה מקורות נוספים לשיקול דעת —
-        לא אימות של הבדיקה שלנו ולא תחליף לה.
+        {t.factCheckerDescPart1}
+        <span dir="ltr">fakereporter.net</span>
+        {t.factCheckerDescPart2}
+        <span dir="ltr">irrelevant.org.il</span>
+        {t.factCheckerDescPart3}
       </p>
       <div className="mt-4 space-y-4">
         {report.claims.map((claim) => {
@@ -108,7 +117,7 @@ export function FactCheckerSitesSection({ report }: { report: Report }) {
                     >
                       {e.title || e.url}
                     </a>
-                    <span className="ms-1 text-xs text-stone-400">
+                    <span className="ms-1 text-xs text-stone-600">
                       {e.publisher ? `· ${e.publisher}` : ""}
                       {e.publicationDate ? ` · ${e.publicationDate}` : ""}
                     </span>
@@ -124,15 +133,12 @@ export function FactCheckerSitesSection({ report }: { report: Report }) {
   );
 }
 
-function confidenceShortLabel(confidence: Report["evaluations"][number]["confidence"]): string {
-  return { low: "נמוך", medium: "בינוני", high: "גבוה" }[confidence];
-}
-
 export function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 export function SourceList({ evidence }: { evidence: EvidenceItem[] }) {
+  const t = useTranslation("report");
   return (
     <ul className="mt-3 space-y-2">
       {evidence.map((e) => (
@@ -145,10 +151,10 @@ export function SourceList({ evidence }: { evidence: EvidenceItem[] }) {
           >
             {e.title || e.url}
           </a>
-          <span className="text-xs text-stone-400">
-            {sourceTypeLabel(e.sourceType)}
+          <span className="text-xs text-stone-600">
+            {sourceTypeLabel(e.sourceType, t.sourceTypeLabel)}
             {e.publicationDate ? ` · ${e.publicationDate}` : ""}
-            {!e.accessible ? ` · לא נגיש (${e.inaccessibleReason ?? "לא ידוע"})` : ""}
+            {!e.accessible ? ` · ${t.inaccessibleLabel} (${e.inaccessibleReason ?? t.unknownReason})` : ""}
           </span>
         </li>
       ))}
@@ -157,10 +163,12 @@ export function SourceList({ evidence }: { evidence: EvidenceItem[] }) {
 }
 
 export function CopySummaryButton({ report }: { report: Report }) {
+  const t = useTranslation("report");
+  const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const summary = buildPlainTextSummary(report);
+    const summary = buildPlainTextSummary(report, t, language);
     try {
       await navigator.clipboard.writeText(summary);
       setCopied(true);
@@ -176,12 +184,13 @@ export function CopySummaryButton({ report }: { report: Report }) {
       type="button"
       className="shrink-0 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
     >
-      {copied ? "הועתק ✓" : "העתק סיכום"}
+      {copied ? t.copied : t.copySummary}
     </button>
   );
 }
 
 export function CopyShareLinkButton({ shareUrl }: { shareUrl: string }) {
+  const t = useTranslation("report");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -201,14 +210,18 @@ export function CopyShareLinkButton({ shareUrl }: { shareUrl: string }) {
       type="button"
       className="shrink-0 rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-100"
     >
-      {copied ? "הקישור הועתק ✓" : "העתק קישור לשיתוף"}
+      {copied ? t.linkCopied : t.copyShareLink}
     </button>
   );
 }
 
-function buildPlainTextSummary(report: Report): string {
+function buildPlainTextSummary(
+  report: Report,
+  t: ReturnType<typeof useTranslation<"report">>,
+  language: Language
+): string {
   const lines = [
-    `${SITE_NAME} — סיכום בדיקה (${formatDate(report.checkedAt)})`,
+    `${SITE_NAME} — ${t.summaryTitleSuffix} (${formatDate(report.checkedAt, language)})`,
     "",
     report.overallAssessment,
     "",
@@ -216,36 +229,31 @@ function buildPlainTextSummary(report: Report): string {
     "",
     ...report.claims.map((claim) => {
       const ev = report.evaluations.find((e) => e.claimId === claim.id);
-      return `• "${claim.originalText}" — ${ev?.classification ?? "לא הוערך"}`;
+      return `• "${claim.originalText}" — ${ev?.classification ?? t.notEvaluated}`;
     }),
   ];
   return lines.join("\n");
 }
 
-export function claimTypeLabel(type: ExtractedClaim["claimType"]): string {
-  return {
-    factual: "טענה עובדתית",
-    interpretive: "פרשנות",
-    predictive: "תחזית",
-    satirical: "סאטירה",
-    opinion: "דעה",
-  }[type];
+export function claimTypeLabel(
+  type: ExtractedClaim["claimType"],
+  labels: Record<ExtractedClaim["claimType"], string>
+): string {
+  return labels[type];
 }
 
-export function sourceTypeLabel(type: EvidenceItem["sourceType"]): string {
-  return {
-    primary: "מקור ראשוני",
-    official: "מסמך רשמי",
-    news: "כתבת חדשות",
-    "fact-checker": "ארגון בודק עובדות",
-    opinion: "דעה",
-    other: "אחר",
-  }[type];
+export function sourceTypeLabel(
+  type: EvidenceItem["sourceType"],
+  labels: Record<EvidenceItem["sourceType"], string>
+): string {
+  return labels[type];
 }
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string, language: Language = "he"): string {
   try {
-    return new Date(iso).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" });
+    return language === "en"
+      ? new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
+      : new Date(iso).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" });
   } catch {
     return iso;
   }
