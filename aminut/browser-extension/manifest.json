@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Facto — בדיקת מהימנות חדשות",
+  "short_name": "Facto",
+  "description": "סמנו טענה בכל אתר (כולל פייסבוק, אינסטגרם ו-X) ולחצו ימני כדי לבדוק אותה מול מקורות אמיתיים עם Facto.",
+  "version": "0.1.0",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["contextMenus"]
+}
