@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import { KnownError, MAX_CLIENT_IMAGE_BYTES, compressImageUntilUnderLimit, fileToBase64 } from "@/lib/clientImageUpload";
 import { useTranslation } from "@/lib/i18n/LanguageContext";
+import { useElapsedSeconds } from "@/hooks/useElapsedSeconds";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
@@ -26,6 +27,7 @@ export function ClaimForm({
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageNote, setImageNote] = useState<{ confidence: string; notes: string[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageElapsedSeconds = useElapsedSeconds(imageStatus === "loading");
 
   const canSubmit = !disabled && (text.trim().length > 0 || url.trim().length > 0);
 
@@ -150,7 +152,9 @@ export function ClaimForm({
           onClick={() => fileInputRef.current?.click()}
           className="flex w-full items-center justify-center rounded-md border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {imageStatus === "loading" ? t.uploadButtonLoading : t.uploadButtonIdle}
+          {imageStatus === "loading"
+            ? `${t.uploadButtonLoading} (${imageElapsedSeconds}${t.secondsAbbreviation})`
+            : t.uploadButtonIdle}
         </button>
         {imageError && <p className="mt-1 text-xs text-rose-600">{imageError}</p>}
         <p className="mt-1 text-xs text-stone-600">{t.imageDisclaimer}</p>

@@ -3,6 +3,7 @@
 import { ChangeEvent, useRef, useState } from "react";
 import type { DetectAiImageResult } from "@/lib/types";
 import { KnownError, MAX_CLIENT_IMAGE_BYTES, compressImageUntilUnderLimit, fileToBase64 } from "@/lib/clientImageUpload";
+import { useElapsedSeconds } from "@/hooks/useElapsedSeconds";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
@@ -55,6 +56,7 @@ export function AiImageDetector() {
   const [result, setResult] = useState<DetectAiImageResult | null>(null);
   const [wasCompressed, setWasCompressed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const elapsedSeconds = useElapsedSeconds(status === "loading");
 
   const reset = () => {
     setStatus("idle");
@@ -148,7 +150,7 @@ export function AiImageDetector() {
           className="flex w-full items-center justify-center rounded-md border border-dashed border-stone-300 p-4 text-xs text-stone-500 hover:border-teal-400 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "loading"
-            ? "בודק את התמונה..."
+            ? `בודק את התמונה... (${elapsedSeconds} שנ')`
             : "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP) — תמונות גדולות יכווצו אוטומטית"}
         </button>
         {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}

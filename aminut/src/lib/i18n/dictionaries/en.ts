@@ -61,6 +61,7 @@ export const en = {
     urlPlaceholder: "https://...",
     imageUploadLabel: "Or upload a screenshot",
     uploadButtonLoading: "Reading text from image...",
+    secondsAbbreviation: "s",
     uploadButtonIdle: "Click to choose an image (JPEG/PNG/GIF/WebP) — the detected text will be added to the box above for review and editing",
     imageDisclaimer: "The image is sent to Anthropic's (Claude) AI service only to read the text in it, and is not stored on this site.",
     unsupportedFileType: "Unsupported file type. Please upload JPEG, PNG, GIF or WebP only.",

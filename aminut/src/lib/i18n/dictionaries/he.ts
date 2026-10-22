@@ -65,6 +65,7 @@ export const he = {
     urlPlaceholder: "https://...",
     imageUploadLabel: "או העלאת צילום מסך",
     uploadButtonLoading: "מזהה טקסט בתמונה...",
+    secondsAbbreviation: " שנ'",
     uploadButtonIdle: "לחץ/י לבחירת תמונה (JPEG/PNG/GIF/WebP) — הטקסט שיזוהה יתווסף לתיבה למעלה לבדיקה ועריכה",
     imageDisclaimer: "התמונה נשלחת לשירות ה-AI של Anthropic (Claude) לזיהוי הטקסט שבה בלבד, ואינה נשמרת באתר.",
     unsupportedFileType: "סוג קובץ לא נתמך. יש להעלות JPEG, PNG, GIF או WebP בלבד.",
