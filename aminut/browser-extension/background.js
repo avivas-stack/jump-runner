@@ -50,8 +50,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   } else if (info.menuItemId === "facto-check-image" && info.srcUrl && tab?.id != null) {
     handleCheckImage(info, tab.id).catch((err) => {
       // Best-effort only: fall back to just opening the site rather than leaving the
-      // click looking like it did nothing.
-      console.error("Facto: image capture failed, opening site without it:", err);
+      // click looking like it did nothing. If you're seeing this fallback fire, open
+      // chrome://extensions, find Facto, click "service worker" under Inspect views, and
+      // check this message + stack in that console — it names exactly which step failed.
+      console.error("Facto: image capture failed, opening site without it.", err);
       chrome.tabs.create({ url: SITE_URL });
     });
   }
@@ -86,18 +88,35 @@ function findImageRectInPage(srcUrl) {
 }
 
 async function handleCheckImage(info, tabId) {
-  const [injection] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: findImageRectInPage,
-    args: [info.srcUrl],
-  });
+  let injection;
+  try {
+    [injection] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: findImageRectInPage,
+      args: [info.srcUrl],
+    });
+  } catch (err) {
+    throw new Error(`locating the clicked image in the page failed: ${err?.message ?? err}`);
+  }
   const rect = injection?.result;
+  console.log("Facto: image rect lookup result:", rect);
 
-  const screenshotDataUrl = await chrome.tabs.captureVisibleTab(undefined, { format: "png" });
+  let screenshotDataUrl;
+  try {
+    screenshotDataUrl = await chrome.tabs.captureVisibleTab(undefined, { format: "png" });
+  } catch (err) {
+    throw new Error(`capturing the tab screenshot failed: ${err?.message ?? err}`);
+  }
 
-  const croppedBase64 = rect
-    ? await cropScreenshot(screenshotDataUrl, rect)
-    : dataUrlToBase64(screenshotDataUrl); // Couldn't locate the exact element — fall back to the full visible tab rather than failing outright.
+  let croppedBase64;
+  try {
+    // Couldn't locate the exact element — fall back to the full visible tab rather than
+    // failing outright.
+    croppedBase64 = rect ? await cropScreenshot(screenshotDataUrl, rect) : dataUrlToBase64(screenshotDataUrl);
+  } catch (err) {
+    throw new Error(`cropping the screenshot failed: ${err?.message ?? err}`);
+  }
+  console.log(`Facto: captured image, base64 length ${croppedBase64.length}`);
 
   await chrome.storage.local.set({
     [PENDING_IMAGE_STORAGE_KEY]: { base64: croppedBase64, mediaType: "image/png", createdAt: Date.now() },
@@ -106,6 +125,7 @@ async function handleCheckImage(info, tabId) {
   const url = new URL(SITE_URL);
   url.searchParams.set("fromExtensionImage", "1");
   chrome.tabs.create({ url: url.toString() });
+  console.log("Facto: opened site with pending image stored, waiting for the page to pick it up.");
 }
 
 function dataUrlToBase64(dataUrl) {

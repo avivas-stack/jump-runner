@@ -17,13 +17,24 @@
 
   function run() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get(MARKER_PARAM) !== "1") return;
+    if (params.get(MARKER_PARAM) !== "1") {
+      return;
+    }
+    console.log("Facto extension: image handoff marker found, reading pending image from storage.");
 
     chrome.storage.local.get(PENDING_IMAGE_STORAGE_KEY, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error("Facto extension: storage.local.get failed:", chrome.runtime.lastError);
+        return;
+      }
       const pending = result[PENDING_IMAGE_STORAGE_KEY];
       chrome.storage.local.remove(PENDING_IMAGE_STORAGE_KEY);
       cleanUrl();
-      if (!pending?.base64) return;
+      if (!pending?.base64) {
+        console.error("Facto extension: marker was present but no pending image was found in storage.");
+        return;
+      }
+      console.log(`Facto extension: pending image found (base64 length ${pending.base64.length}), looking for the upload input.`);
       waitForInputAndInject(pending);
     });
   }
@@ -55,7 +66,11 @@
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
       input.files = dataTransfer.files;
+      // React's file-input onChange listens for the native "change" event; "input" is
+      // dispatched too since some non-React handling paths listen for that one instead.
+      input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
+      console.log("Facto extension: image handed off to the upload input successfully.");
     } catch (err) {
       console.error("Facto extension: failed to inject captured image:", err);
     }
@@ -67,6 +82,8 @@
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return new File([bytes], filename, { type: mediaType });
   }
+
+  console.log("Facto extension: content-handoff script loaded on", window.location.href);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", run);
