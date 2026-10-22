@@ -18,13 +18,25 @@ const STYLES: Record<Classification, string> = {
   "דעה, תחזית או סאטירה": "border-stone-500 text-stone-700 bg-stone-100/60 italic",
 };
 
-export function ClassificationBadge({ classification }: { classification: Classification }) {
+export function ClassificationBadge({
+  classification,
+  partial = false,
+}: {
+  classification: Classification;
+  /**
+   * Set when this badge is one claim among several with DIFFERING classifications in the
+   * same report — prefixes the label (e.g. "Part: Verified") so it reads as one piece of
+   * a mixed picture, not the report's overall verdict (that's `report.overallClassification`,
+   * shown separately — see ReportView.verdict.tsx).
+   */
+  partial?: boolean;
+}) {
   const t = useTranslation("classifications");
   return (
     <span
       className={`inline-flex items-center border-s-4 px-3 py-1 text-xs font-bold tracking-wide ${STYLES[classification]}`}
     >
-      {t.label[classification]}
+      {partial ? t.partialLabel.replace("{classification}", t.label[classification]) : t.label[classification]}
     </span>
   );
 }
@@ -41,7 +53,7 @@ export function ConfidenceNote({ confidence }: { confidence: Confidence }) {
  * over-cautious "don't" for content that turns out fine. The tone (for styling) never
  * changes with language, only the displayed text does — so it stays as plain code here.
  */
-const RECOMMENDATION_TONE: Record<Classification, "share" | "caution" | "block"> = {
+export const RECOMMENDATION_TONE: Record<Classification, "share" | "caution" | "block"> = {
   מאומת: "share",
   שקרי: "block",
   מטעה: "block",

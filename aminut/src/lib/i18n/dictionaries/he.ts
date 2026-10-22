@@ -182,6 +182,7 @@ export const he = {
       medium: "בינוני",
       high: "גבוה",
     } as Record<Confidence, string>,
+    partialLabel: "חלק {classification}",
   },
   report: {
     newCheckButton: "+ בדיקה חדשה",
@@ -220,6 +221,9 @@ export const he = {
     copySummary: "העתק סיכום",
     linkCopied: "הקישור הועתק ✓",
     copyShareLink: "העתק קישור לשיתוף",
+    shareOnWhatsApp: "שיתוף בוואטסאפ",
+    whatsappVerdictPrefix: "Facto בדק: ",
+    whatsappLinkPrefix: "לדוח המלא: ",
     summaryTitleSuffix: "סיכום בדיקה",
     notEvaluated: "לא הוערך",
     claimTypeLabel: {

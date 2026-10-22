@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { EvidenceItem, ExtractedClaim, Report } from "@/lib/types";
 import { SITE_NAME } from "@/lib/siteConfig";
-import { ClassificationBadge, RecommendationNote } from "./ClassificationBadge";
+import { ClassificationBadge, RECOMMENDATION_TONE, RecommendationNote } from "./ClassificationBadge";
 import { useLanguage, useTranslation } from "@/lib/i18n/LanguageContext";
 import type { Language } from "@/lib/i18n/LanguageContext";
 
@@ -212,6 +212,48 @@ export function CopyShareLinkButton({ shareUrl }: { shareUrl: string }) {
     >
       {copied ? t.linkCopied : t.copyShareLink}
     </button>
+  );
+}
+
+const TONE_EMOJI: Record<"share" | "caution" | "block", string> = {
+  share: "✅",
+  caution: "⚠️",
+  block: "❌",
+};
+
+/**
+ * A WhatsApp-ready share button — opens wa.me with a short, pre-filled "certificate"-style
+ * message (one verdict line, one recommendation line, a link back to the full report) for
+ * forwarding into a chat, the way a VirusTotal scan result gets pasted around as proof of
+ * a check. Deliberately NOT the same text as CopySummaryButton, which is the full,
+ * multi-paragraph breakdown — this is the opposite: as short as the verdict allows.
+ * Only rendered when a shareUrl exists (see ReportView.tsx) — a "look what I checked"
+ * message is only worth sending with a real link to back it up.
+ */
+export function ShareWhatsAppButton({ report, shareUrl }: { report: Report; shareUrl: string }) {
+  const t = useTranslation("report");
+  const classifications = useTranslation("classifications");
+  const overallClassification = report.overallClassification ?? report.evaluations[0]?.classification;
+  if (!overallClassification) return null;
+
+  const fullUrl = `${window.location.origin}${shareUrl}`;
+  const tone = RECOMMENDATION_TONE[overallClassification];
+  const message = [
+    `${TONE_EMOJI[tone]} ${t.whatsappVerdictPrefix}${classifications.label[overallClassification]}`,
+    classifications.recommendation[overallClassification],
+    "",
+    `${t.whatsappLinkPrefix}${fullUrl}`,
+  ].join("\n");
+
+  return (
+    <a
+      href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="shrink-0 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+    >
+      {t.shareOnWhatsApp}
+    </a>
   );
 }
 

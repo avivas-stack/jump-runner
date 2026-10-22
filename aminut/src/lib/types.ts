@@ -121,6 +121,12 @@ export const ReportSchema = z.object({
   id: z.string(),
   checkedAt: z.string(),
   overallAssessment: z.string(),
+  // Optional (not `.default(...)`) on purpose: a report saved before this field existed
+  // has no truthful value to backfill, and ReportSchema.safeParse gates whether an old
+  // shared report link still resolves (see reportStore.ts) — a required field here would
+  // silently 404 every pre-existing permalink. The UI falls back to the older
+  // per-classification breakdown when this is absent.
+  overallClassification: ClassificationSchema.optional(),
   plainExplanation: z.array(z.string()),
   claims: z.array(ExtractedClaimSchema),
   evaluations: z.array(ClaimEvaluationSchema),

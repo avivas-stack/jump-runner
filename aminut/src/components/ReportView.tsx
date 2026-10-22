@@ -8,6 +8,7 @@ import {
   CopyShareLinkButton,
   CopySummaryButton,
   FactCheckerSitesSection,
+  ShareWhatsAppButton,
   SourceList,
   formatDate,
 } from "./ReportView.helpers";
@@ -25,6 +26,12 @@ export function ReportView({
 }) {
   const t = useTranslation("report");
   const { language } = useLanguage();
+  // Drives the "Part: Verified" / "Part: Unverifiable" framing on each claim card below.
+  // Gated on overallClassification (not just "classifications differ") on purpose: a
+  // report saved before that field existed has no combined verdict to be "part" of, so it
+  // renders exactly as it always did — see the optional-field comment in types.ts.
+  const hasMixedClassifications =
+    Boolean(report.overallClassification) && new Set(report.evaluations.map((e) => e.classification)).size > 1;
   return (
     <div className="space-y-6">
       {onNewCheck && (
@@ -61,6 +68,7 @@ export function ReportView({
           <div className="flex shrink-0 flex-col items-end gap-2">
             <CopySummaryButton report={report} />
             {shareUrl && <CopyShareLinkButton shareUrl={shareUrl} />}
+            {shareUrl && <ShareWhatsAppButton report={report} shareUrl={shareUrl} />}
           </div>
         </div>
         {report.plainExplanation.length > 0 && (
@@ -90,7 +98,7 @@ export function ReportView({
             const evaluation = report.evaluations.find((e) => e.claimId === claim.id);
             const evidence = report.evidence.filter((e) => e.claimId === claim.id);
             return evaluation ? (
-              <ClaimCard key={claim.id} claim={claim} evaluation={evaluation} evidence={evidence} />
+              <ClaimCard key={claim.id} claim={claim} evaluation={evaluation} evidence={evidence} partial={hasMixedClassifications} />
             ) : null;
           })
         )}

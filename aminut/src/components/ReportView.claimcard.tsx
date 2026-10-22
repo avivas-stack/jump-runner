@@ -10,10 +10,13 @@ export function ClaimCard({
   claim,
   evaluation,
   evidence,
+  partial = false,
 }: {
   claim: ExtractedClaim;
   evaluation: Report["evaluations"][number];
   evidence: EvidenceItem[];
+  /** See ClassificationBadge's own `partial` prop — forwarded from ReportView.tsx. */
+  partial?: boolean;
 }) {
   const t = useTranslation("report");
   const tCard = useTranslation("reportClaimCard");
@@ -23,7 +26,7 @@ export function ClaimCard({
   return (
     <article id={`claim-${claim.id}`} className="scroll-mt-4 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <ClassificationBadge classification={evaluation.classification} />
+        <ClassificationBadge classification={evaluation.classification} partial={partial} />
         <span className="text-xs text-stone-600">{claimTypeLabel(claim.claimType, t.claimTypeLabel)}</span>
       </div>
       <RecommendationNote classification={evaluation.classification} />

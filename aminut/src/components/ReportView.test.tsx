@@ -181,10 +181,27 @@ describe("ReportView", () => {
     expect(screen.getAllByText('ככה"נ שקרי').length).toBeGreaterThanOrEqual(2);
   });
 
-  it("shows a classification-count summary for a multi-claim report instead of one single verdict", () => {
+  it("shows a classification-count summary for a multi-claim report instead of one single verdict, when there's no overall verdict to show", () => {
     renderWithLanguage(<ReportView report={report} />);
     expect(screen.getByText("סיכום הסיווגים")).toBeInTheDocument();
     expect(screen.getAllByText("× 1")).toHaveLength(2);
+    // report has no overallClassification (as an older saved report wouldn't) — per-claim
+    // badges should read bare "מאומת"/"שקרי", not "part"-prefixed.
+    expect(screen.getAllByText("מאומת").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("שקרי").length).toBeGreaterThan(0);
+  });
+
+  it("shows one combined overall verdict plus 'part'-labeled per-claim badges when claims have mixed classifications and an overall verdict was computed", () => {
+    const mixedReport = { ...report, overallClassification: "מטעה" as const };
+    renderWithLanguage(<ReportView report={mixedReport} />);
+
+    // The big combined verdict badge and its recommendation.
+    expect(screen.getAllByText("מטעה").length).toBeGreaterThan(0);
+    // Per-claim badges now read "Part: Verified" / "Part: False", not bare "Verified"/"False"
+    // (the how-it-works legend elsewhere in the DOM also lists every bare classification
+    // name, same as the other tests in this file — not what this assertion is about).
+    expect(screen.getAllByText("חלק מאומת").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("חלק שקרי").length).toBeGreaterThan(0);
   });
 
   it("truncates a long evidence excerpt with a 'show more' toggle instead of dumping the full text inline", () => {
@@ -284,5 +301,24 @@ describe("ReportView", () => {
   it("omits the 'where might this have come from' section when no likely origin was determined", () => {
     renderWithLanguage(<ReportView report={report} />);
     expect(screen.queryByText("מאיפה ייתכן שהגיע המידע?")).not.toBeInTheDocument();
+  });
+
+  it("offers a short WhatsApp-ready verdict link when a share URL exists, and omits it otherwise", () => {
+    const { rerender } = renderWithLanguage(<ReportView report={report} shareUrl="/report/r1" />);
+
+    const whatsappLink = screen.getByRole("link", { name: "שיתוף בוואטסאפ" });
+    const decodedHref = decodeURIComponent(whatsappLink.getAttribute("href") ?? "");
+    expect(decodedHref).toContain("https://wa.me/?text=");
+    // Multi-claim report with no overallClassification set falls back to the first claim's
+    // own verdict ("מאומת") rather than rendering nothing.
+    expect(decodedHref).toContain("מאומת");
+    expect(decodedHref).toContain(window.location.origin + "/report/r1");
+
+    rerender(
+      <LanguageProvider>
+        <ReportView report={report} />
+      </LanguageProvider>
+    );
+    expect(screen.queryByRole("link", { name: "שיתוף בוואטסאפ" })).not.toBeInTheDocument();
   });
 });

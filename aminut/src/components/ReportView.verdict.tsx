@@ -34,9 +34,26 @@ export function VerdictHero({ report }: { report: Report }) {
   for (const evaluation of report.evaluations) {
     counts.set(evaluation.classification, (counts.get(evaluation.classification) ?? 0) + 1);
   }
+  // Same gate as ReportView.tsx's hasMixedClassifications: only "partial"-label the
+  // per-classification counts once there's an overall verdict for them to be part of —
+  // an older report with no overallClassification renders exactly as it always did.
+  const isMixed = Boolean(report.overallClassification) && counts.size > 1;
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+      {/* Older reports (saved before overallClassification existed) have no value here —
+          ReportSchema keeps the field optional specifically so those still render, just
+          without this combined-verdict block, instead of 404ing (see types.ts). */}
+      {report.overallClassification && (
+        <div className="mb-5 border-b border-stone-200 pb-5 text-center">
+          <span className={BIG_BADGE_STYLES[report.overallClassification]}>
+            {classifications.label[report.overallClassification]}
+          </span>
+          <div className="mt-2">
+            <RecommendationNote classification={report.overallClassification} />
+          </div>
+        </div>
+      )}
       <h2 className="text-center text-xs font-medium tracking-wide text-stone-500 uppercase">
         {t.classificationsSummaryTitle}
       </h2>
@@ -44,10 +61,10 @@ export function VerdictHero({ report }: { report: Report }) {
         {Array.from(counts.entries()).map(([classification, count]) => (
           <div key={classification} className="flex flex-col items-center gap-1">
             <span className="flex items-center gap-1.5">
-              <ClassificationBadge classification={classification} />
+              <ClassificationBadge classification={classification} partial={isMixed} />
               <span className="text-sm font-medium text-stone-500">× {count}</span>
             </span>
-            <RecommendationNote classification={classification} />
+            {!report.overallClassification && <RecommendationNote classification={classification} />}
           </div>
         ))}
       </div>

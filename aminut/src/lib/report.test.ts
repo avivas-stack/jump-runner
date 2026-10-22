@@ -75,6 +75,54 @@ describe("buildReport", () => {
     expect(report.checkedAt).toBeTruthy();
   });
 
+  it("reuses the single claim's own classification as the overall verdict, ignoring whatever the model echoed back", async () => {
+    callStructuredMock.mockResolvedValueOnce({
+      overallAssessment: "הטענה נבדקה ואומתה",
+      // Deliberately a different classification than the claim's own, to prove the
+      // single-claim case is forced to match rather than trusting the model's echo.
+      overallClassification: "שקרי",
+      plainExplanation: ["ההסבר המלא"],
+      limitations: [],
+      openQuestions: [],
+    });
+
+    const report = await buildReport({
+      claims: [claim],
+      evaluations: [evaluation],
+      evidence: [evidence],
+      searchesUsed: 2,
+      searchBudget: 8,
+      incomplete: false,
+      incompleteReason: null,
+    });
+
+    expect(report.overallClassification).toBe(evaluation.classification);
+  });
+
+  it("uses the model's synthesized overall classification for a multi-claim report", async () => {
+    const secondClaim: ExtractedClaim = { ...claim, id: "c2", originalText: "טענה שנייה" };
+    const secondEvaluation: ClaimEvaluation = { ...evaluation, claimId: "c2", classification: "לא ניתן לאימות" };
+    callStructuredMock.mockResolvedValueOnce({
+      overallAssessment: "טענה אחת אומתה, השנייה אינה ניתנת לאימות",
+      overallClassification: "מטעה",
+      plainExplanation: ["ההסבר המלא"],
+      limitations: [],
+      openQuestions: [],
+    });
+
+    const report = await buildReport({
+      claims: [claim, secondClaim],
+      evaluations: [evaluation, secondEvaluation],
+      evidence: [evidence],
+      searchesUsed: 2,
+      searchBudget: 8,
+      incomplete: false,
+      incompleteReason: null,
+    });
+
+    expect(report.overallClassification).toBe("מטעה");
+  });
+
   it("propagates an incomplete/unavailable-search state instead of presenting it as a full fact-check", async () => {
     callStructuredMock.mockResolvedValueOnce({
       overallAssessment: "לא ניתן היה לבצע חיפוש אמיתי",

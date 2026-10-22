@@ -173,6 +173,7 @@ export const en = {
       medium: "Medium",
       high: "High",
     },
+    partialLabel: "Part: {classification}",
   },
   report: {
     newCheckButton: "+ New check",
@@ -213,6 +214,9 @@ export const en = {
     copySummary: "Copy summary",
     linkCopied: "Link copied ✓",
     copyShareLink: "Copy share link",
+    shareOnWhatsApp: "Share on WhatsApp",
+    whatsappVerdictPrefix: "Facto checked this: ",
+    whatsappLinkPrefix: "Full report: ",
     summaryTitleSuffix: "check summary",
     notEvaluated: "Not evaluated",
     claimTypeLabel: {
